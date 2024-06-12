@@ -26,9 +26,9 @@ def Api(content, task):
         return response.status_code
 
 
-def LLM_summary(task="1"):
+def LLM_summary(post_id,task="1"):
     # 访问数据库，获取帖子【之后加上自动监测】
-    post = Post.objects.get(id=1813553090)
+    post = Post.objects.get(id=post_id)
     id = post.id
     title = post.title
     content = post.content
