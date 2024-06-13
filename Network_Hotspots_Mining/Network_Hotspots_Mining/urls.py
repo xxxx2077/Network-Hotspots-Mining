@@ -24,7 +24,8 @@ urlpatterns = [
     path('hello/json',views.hello_json),
     path('bilibili/',views.bilibili),
     path('testdb/',views.testdb),
-    path('get_data',views.test_data),
+    path('test_data/',views.test_data),
+    path('preprocess/',views.preprocess),
     path('LLM/',views.LLM),
     path('LLM_summary_db/',views.LLM_summary_db)
 ]

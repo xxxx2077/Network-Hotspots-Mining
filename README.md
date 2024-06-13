@@ -78,3 +78,10 @@ pip freeze >requirements.txt
 python manage.py inspectdb 表名 > [app名]/models.py
 ```
 
+### 创建新表
+
+```shell
+python manage.py makemigrations
+python manage.py migrate
+```
+

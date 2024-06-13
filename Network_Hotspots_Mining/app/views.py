@@ -4,6 +4,7 @@ from app.controller.single_pass import launch_single_pass,get_event_list
 from app.controller.LLM import LLM_summary, LLM_class
 from app.models import Comments,Post
 from app.util.util import querySet_to_list
+from app.misc.test import preprocess_data
 import concurrent.futures
 import os
 # Create your views here.
@@ -20,6 +21,12 @@ def hello_json(request):
 def bilibili(request):
     return redirect('https://www.bilibili.com')
 
+def test_data(request):
+    res = get_event_list()
+    for var in res:
+        print(var)
+    return HttpResponse("test data done!")
+
 def testdb(request):
     response = ''
     response1 = ''
@@ -29,10 +36,8 @@ def testdb(request):
     response = response1
     return HttpResponse("<p>" + response + "</p>")
 
-def test_data(request):
-    data = get_event_list()
-    for var in data:
-        print(var)
+def preprocess(request):
+    preprocess_data()
     return HttpResponse('get_data done')
 
 def LLM_summary_db(request):
