@@ -48,7 +48,7 @@ def LLM_summary_db(request):
     # print('LLM_summary_db done!')
 
     print('LLM_summary_db is running...')
-    with concurrent.futures.ThreadPoolExecutor() as executor:      
+    with concurrent.futures.ThreadPoolExecutor() as executor:
         id_querySet = Post.objects.values('id').all()
         id_list = querySet_to_list(id_querySet,'id')
         print(id_list)
@@ -59,7 +59,7 @@ def LLM_summary_db(request):
                 res = res+'\n'
                 print(res)
                 f.write(res)
-        
+
     print('LLM_summary_db done!')
 
 def LLM(request):
