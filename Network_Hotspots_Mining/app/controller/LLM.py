@@ -43,7 +43,7 @@ def LLM_summary(post_id, task="1"):
             print(post_id)
             print(generated_text)
             print('---')
-            content = content + '注意：每一点后面换行。'
+            content = content + '。注意：每一点后面换行。'
             continue
 
         # 转为 json
@@ -64,12 +64,16 @@ def LLM_summary(post_id, task="1"):
                 print(generated_json['summary'])
             elif line.startswith("影响及后果：") or line.startswith("6. 影响及后果："):
                 generated_json['consequences'] = line.split("影响及后果：")[1].strip()
-            # 错误3
             else:
-                print('error3:')
-                print(post_id)
-                print(generated_text)
-                print('---')
+                break
+        # 错误3：格式错误
+        if generated_json['summary'] == "":
+            print('error3:')
+            print(post_id)
+            print(generated_text)
+            print('---')
+            content = content + '。注意：按照以下格式简洁明了地总结这一事件：1. 时间：2. 地点：3. 主要参与者：4. 关键点：5. 事件总结：6. 影响及后果：'
+            continue
 
         # 错误2：没有总结部份
         if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
@@ -118,7 +122,7 @@ def LLM_class(task="2"):
                 print('error1:')
                 print(generated_text)
                 print('---')
-                content = content + '注意：每一点后面换行。'
+                content = content + '。注意：每一点后面换行。'
                 continue
 
             # 转为 json
@@ -131,11 +135,15 @@ def LLM_class(task="2"):
                     generated_json['Key_points'] = line.split("关键词：")[1].strip()
                 elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
                     generated_json['summary'] = line.split("事件总结：")[1].strip()
-                # 错误3
                 else:
-                    print('error3:')
-                    print(generated_text)
-                    print('---')
+                    break
+            # 错误3：格式错误
+            if generated_json['summary'] == "":
+                print('error3:')
+                print(generated_text)
+                print('---')
+                content = content + '。注意：总结出该类别的主要特征，包括但不限于常见1. 类别标题：2. 关键词：3. 事件总结：'
+                continue
 
             # 错误2：没有总结部份
             if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
@@ -143,7 +151,7 @@ def LLM_class(task="2"):
                 print('error2:')
                 print(generated_text)
                 print('---')
-                content = content + '。注意：一定要进行5. 事件总结：'
+                content = content + '。注意：一定要进行3. 事件总结：'
                 continue
 
             # 成功：存入数据库
