@@ -4,6 +4,7 @@ from app.controller.single_pass import launch_single_pass,get_event_list
 from app.controller.LLM import LLM_summary, LLM_class
 from app.models import Comments,Post
 from app.util.util import querySet_to_list
+from app.misc.test import preprocess_data
 import concurrent.futures
 import os
 # Create your views here.
@@ -30,9 +31,7 @@ def testdb(request):
     return HttpResponse("<p>" + response + "</p>")
 
 def test_data(request):
-    data = get_event_list()
-    for var in data:
-        print(var)
+    preprocess_data()
     return HttpResponse('get_data done')
 
 def LLM_summary_db(request):
