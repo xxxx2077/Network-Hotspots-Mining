@@ -86,7 +86,7 @@ class SinglePassCluster():
             json.dump(self.res, f, ensure_ascii=False)
 
 def get_event_list():
-    summary_querySet = Summary.objects.values('summary').all()
+    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary').all()
     return querySet_to_list(summary_querySet,'summary')
 
 def launch_single_pass():

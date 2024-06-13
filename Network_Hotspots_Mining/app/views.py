@@ -21,6 +21,12 @@ def hello_json(request):
 def bilibili(request):
     return redirect('https://www.bilibili.com')
 
+def test_data(request):
+    res = get_event_list()
+    for var in res:
+        print(var)
+    return HttpResponse("test data done!")
+
 def testdb(request):
     response = ''
     response1 = ''
@@ -30,7 +36,7 @@ def testdb(request):
     response = response1
     return HttpResponse("<p>" + response + "</p>")
 
-def test_data(request):
+def preprocess(request):
     preprocess_data()
     return HttpResponse('get_data done')
 

@@ -193,6 +193,7 @@ class Summary(models.Model):
     Key_points = models.CharField(max_length=100, blank=True, null=True)
     summary = models.CharField(max_length=1000, blank=True, null=True)
     consequences = models.CharField(max_length=1000, blank=True, null=True)
+    is_abnormal = models.BooleanField(default=False, null=False)
     class Meta:
         managed = False
         db_table = 'summary'
