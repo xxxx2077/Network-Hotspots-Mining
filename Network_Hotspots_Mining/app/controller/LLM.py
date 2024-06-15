@@ -103,12 +103,24 @@ def LLM_summary(post_id, task="1"):
         print('---')
         break
 
+def hot_total():
+    with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
+        content_list = json.load(file)
+    
+    for it in content_list:
+        hot_total = 0
+        for hot_value in content_list[it]:
+            hot_total += hot_value
+        Class.objects.filter(class_id = it+1).update(hot_value=hot_total)
+    
+
+        
 
 def LLM_class(task="2"):
     # 访问 json 文件，获取聚类结果集合
     with open('./app/result/res_total.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
-
+    
     # 遍历每个类别的聚类结果
     for it in content_list:
         # 转换为 JSON 字符串
@@ -164,3 +176,5 @@ def LLM_class(task="2"):
             print(generated_text)
             print('---')
             break
+        
+    hot_total()

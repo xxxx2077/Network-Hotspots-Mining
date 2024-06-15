@@ -1,10 +1,11 @@
 from django.shortcuts import render,redirect
 from django.http import JsonResponse,HttpResponse
-from app.controller.single_pass import launch_single_pass,get_event_list
+from app.controller.single_pass import launch_single_pass,get_data
 from app.controller.LLM import LLM_summary, LLM_class
 from app.models import Comments,Post
 from app.util.util import querySet_to_list
-from app.misc.test import preprocess_data
+from app.misc.data_processing import preprocess_data
+from app.misc.clear_db import clear_db_class,clear_db_summary
 import concurrent.futures
 import os
 # Create your views here.
@@ -22,7 +23,7 @@ def bilibili(request):
     return redirect('https://www.bilibili.com')
 
 def test_data(request):
-    res = get_event_list()
+    res = get_data()
     for var in res:
         print(var)
     return HttpResponse("test data done!")
@@ -40,18 +41,12 @@ def preprocess(request):
     preprocess_data()
     return HttpResponse('get_data done')
 
-def LLM_summary_db(request):
-    # print('LLM_summary_db is running...')
-    # with concurrent.futures.ThreadPoolExecutor() as executor:      
-    #     id_querySet = Post.objects.values('id').all()
-    #     id_list = querySet_to_list(id_querySet,'id')
-    #     print(id_list)
-    #     for post_id in id_list:
-    #         executor.submit(LLM_summary, post_id)
-    #     print('wait for result...')
-    #     executor.shutdown
-    # print('LLM_summary_db done!')
+def clear(request):
+    clear_db_summary
+    clear_db_class
+    return HttpResponse('clear has done')
 
+def LLM_summary_db(request):
     print('LLM_summary_db is running...')
     with concurrent.futures.ThreadPoolExecutor() as executor:
         id_querySet = Post.objects.values('id').all()
@@ -61,7 +56,7 @@ def LLM_summary_db(request):
         result = executor.map(LLM_summary, id_list)
         with open(os.path.join(os.path.dirname(__file__),"result/LLM_summary_db_res.txt"), "w", encoding="utf-8") as f:
             for res in result:
-                res = res+'\n'
+                res = str(res)+'\n'
                 print(res)
                 f.write(res)
 
