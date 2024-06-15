@@ -48,17 +48,26 @@ def clear(request):
 
 def LLM_summary_db(request):
     print('LLM_summary_db is running...')
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     id_querySet = Post.objects.values('id').all()
+    #     id_list = querySet_to_list(id_querySet,'id')
+    #     print(id_list)
+    #     print('wait for result...')
+    #     for id in id_list:
+    #         executor.submit(LLM_summary, id)
+    #     executor.shutdown()
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
         id_querySet = Post.objects.values('id').all()
         id_list = querySet_to_list(id_querySet,'id')
         print(id_list)
         print('wait for result...')
         result = executor.map(LLM_summary, id_list)
-        with open(os.path.join(os.path.dirname(__file__),"result/LLM_summary_db_res.txt"), "w", encoding="utf-8") as f:
-            for res in result:
-                res = str(res)+'\n'
-                print(res)
-                f.write(res)
+        # with open(os.path.join(os.path.dirname(__file__),"result/LLM_summary_db_res.txt"), "w", encoding="utf-8") as f:
+        #     for res in result:
+        #         res = str(res)+'\n'
+        #         print(res)
+        #         f.write(res)
 
     print('LLM_summary_db done!')
 
