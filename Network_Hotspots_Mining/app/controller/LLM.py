@@ -37,6 +37,11 @@ def LLM_summary(post_id, task="1"):
     while True:
         # 调用 API
         generated_text = Api(content, task)
+
+        # 转为 json
+        generated_json = {}
+        lines = generated_text.split('\n')
+
         # 错误1：没有分行
         if len(lines) < 6:
             print('error1:')
@@ -46,9 +51,6 @@ def LLM_summary(post_id, task="1"):
             content = content + '。注意：每一点后面换行。'
             continue
 
-        # 转为 json
-        generated_json = {}
-        lines = generated_text.split('\n')
         # 遍历
         for line in lines:
             if line.startswith("时间：") or line.startswith("1. 时间："):
@@ -117,6 +119,11 @@ def LLM_class(task="2"):
         while True:
             # 调用 API
             generated_text = Api(content, task)
+
+            # 转为 json
+            generated_json = {}
+            lines = generated_text.split('\n')
+
             # 错误1：没有分行
             if len(lines) < 3:
                 print('error1:')
@@ -125,9 +132,7 @@ def LLM_class(task="2"):
                 content = content + '。注意：每一点后面换行。'
                 continue
 
-            # 转为 json
-            generated_json = {}
-            lines = generated_text.split('\n')
+            # 遍历
             for line in lines:
                 if line.startswith("类别标题：") or line.startswith("1. 类别标题："):
                     generated_json['class_title'] = line.split("类别标题：")[1].strip()
