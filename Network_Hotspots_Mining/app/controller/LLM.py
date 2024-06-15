@@ -90,7 +90,7 @@ def LLM_summary(post_id, task="1"):
 
         # 成功：存入数据库
         summary = Summary(
-            summary_id=int(id),
+            summary_id=int(post_id),
             date=generated_json.get('date'),
             location=generated_json.get('location'),
             participants=generated_json.get('participants'),
@@ -181,5 +181,5 @@ def LLM_class(task="2"):
             print(generated_text)
             print('---')
             break
-        
+
     hot_total()
