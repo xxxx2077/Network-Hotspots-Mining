@@ -42,8 +42,8 @@ def preprocess(request):
     return HttpResponse('get_data done')
 
 def clear(request):
-    clear_db_summary
-    clear_db_class
+    clear_db_summary()
+    clear_db_class()
     return HttpResponse('clear has done')
 
 def LLM_summary_db(request):
