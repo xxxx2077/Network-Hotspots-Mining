@@ -194,6 +194,7 @@ class Summary(models.Model):
     summary = models.CharField(max_length=1000, blank=True, null=True)
     consequences = models.CharField(max_length=1000, blank=True, null=True)
     is_abnormal = models.BooleanField(default=False, null=False)
+    days = models.IntegerField(null=False)
     class Meta:
         managed = False
         db_table = 'summary'

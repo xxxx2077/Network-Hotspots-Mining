@@ -1,5 +1,6 @@
-from app.models import Summary
+from app.models import Summary,Post
 from app.util.util import querySet_to_list 
+from datetime import datetime,timezone
 
 def preprocess_data():
     res = []
@@ -17,3 +18,15 @@ def preprocess_data():
     for var in res:
         print(var)
         
+def days_calculating():
+    now_time = datetime.now(timezone.utc)
+    print(now_time)
+    summary_querySet = Summary.objects.all().values('summary_id').all()
+    summary_id_list = querySet_to_list(summary_querySet,'summary_id')
+    for summary_id_ in summary_id_list:
+        post_time = Post.objects.filter(id=summary_id_).values('time').first()
+        if post_time:
+            post_local_time = post_time['time']
+            days_ = (now_time-post_local_time).days
+            Summary.objects.filter(summary_id = summary_id_).update(days=days_)
+    

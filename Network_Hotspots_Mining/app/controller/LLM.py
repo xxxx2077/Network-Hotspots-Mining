@@ -96,7 +96,7 @@ def LLM_summary(post_id, task="1"):
             participants=generated_json.get('participants'),
             Key_points=generated_json.get('Key_points'),
             summary=generated_json.get('summary'),
-            consequences=generated_json.get('consequences')
+            consequences=generated_json.get('consequences'),
         )
         summary.save()
         print('success:')

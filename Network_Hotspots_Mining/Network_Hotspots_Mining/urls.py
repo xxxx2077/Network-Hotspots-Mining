@@ -28,5 +28,8 @@ urlpatterns = [
     path('preprocess/',views.preprocess),
     path('clear/',views.clear),
     path('LLM/',views.LLM),
-    path('LLM_summary_db/',views.LLM_summary_db)
+    path('LLM_summary_db/',views.LLM_summary_db),
+
+    path('hotlist',views.get_hotlist),
+    path('speedlist',views.get_speedlist)
 ]

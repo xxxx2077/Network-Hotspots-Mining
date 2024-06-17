@@ -2,12 +2,13 @@ from django.shortcuts import render,redirect
 from django.http import JsonResponse,HttpResponse
 from app.controller.single_pass import launch_single_pass,get_data
 from app.controller.LLM import LLM_summary, LLM_class
-from app.models import Comments,Post
+from app.models import Comments,Post,Class
 from app.util.util import querySet_to_list
-from app.misc.data_processing import preprocess_data
+from app.misc.data_processing import preprocess_data,days_calculating
 from app.misc.clear_db import clear_db_class,clear_db_summary
 import concurrent.futures
 import os
+import json
 # Create your views here.
 def hello_str(request):
     return HttpResponse('Hello,world!')
@@ -82,3 +83,13 @@ def LLM(request):
     print('text_cluster_catorizing done!')
 
     return HttpResponse('success!')
+
+def get_hotlist(request):
+    class_querySet = Class.objects.all().values('class_title','summary','hot_value').order_by('hot_value').all()
+    hotlist_json = json.dumps(class_querySet, ensure_ascii=False)
+    return JsonResponse(hotlist_json)
+
+def get_speedlist(request):
+    class_querySet = Class.objects.all().values('class_title','summary','hot_value_perday').order_by('hot_value_perday').all()
+    speedlist_json = json.dumps(class_querySet, ensure_ascii=False)
+    return JsonResponse(speedlist_json)
