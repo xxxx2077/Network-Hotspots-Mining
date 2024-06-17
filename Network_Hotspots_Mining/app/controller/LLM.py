@@ -99,6 +99,7 @@ def LLM_summary(post_id, task="1"):
             consequences=generated_json.get('consequences')
         )
         summary.save()
+        Post.objects.filter(id=summary_id).update(is_summaried=True)
         print('success:')
         print(post_id)
         print(generated_text)
@@ -109,11 +110,17 @@ def hot_total():
     with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
     
-    for it in content_list:
+    for idx,it in enumerate(content_list):
+        # print(idx)
+        # print(content_list[it])
         hot_total = 0
-        for hot_value in content_list[it]:
-            hot_total += hot_value
-        Class.objects.filter(class_id = it+1).update(hot_value=hot_total)
+        # print('------')
+        for hot_value_dic in content_list[it]:
+            # print(hot_value_dic)
+            if hot_value_dic is not None:
+                hot_total += hot_value_dic['hotval']
+        # print(hot_total)
+        Class.objects.filter(class_id = idx+1).update(hot_value=hot_total)
     
 
         
@@ -176,6 +183,7 @@ def LLM_class(task="2"):
                 class_title=generated_json.get('class_title'),
                 Key_points=generated_json.get('Key_points'),
                 summary=generated_json.get('summary'),
+                is_used=True
             )
             class_.save()
             print(generated_text)

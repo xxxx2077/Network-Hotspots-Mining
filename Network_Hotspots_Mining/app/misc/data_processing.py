@@ -1,4 +1,4 @@
-from app.models import Summary
+from app.models import Summary,Post
 from app.util.util import querySet_to_list 
 
 def preprocess_data():
@@ -16,4 +16,9 @@ def preprocess_data():
     print('以下为异常summary')
     for var in res:
         print(var)
-        
+
+def mark_used():
+    summary_querySet = Summary.objects.values('summary_id').all()
+    summary_id_list = querySet_to_list(summary_querySet,'summary_id')
+    for summary_id in summary_id_list:
+        Post.objects.filter(id=summary_id).update(is_summaried=True)
