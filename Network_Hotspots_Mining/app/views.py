@@ -77,12 +77,11 @@ def LLM(request):
     # LLM_summary(post_id=1813553090)
     # print('summary done!')
 
-    # launch_single_pass()
-    # print('text_cluster done!')
+    launch_single_pass()
+    print('text_cluster done!')
 
-    # hot_total()
-    LLM_class()
-    print('text_cluster_catorizing done!')
+    # LLM_class()
+    # print('text_cluster_catorizing done!')
 
     return HttpResponse('success!')
 

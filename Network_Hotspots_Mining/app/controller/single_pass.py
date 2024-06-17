@@ -88,7 +88,7 @@ class SinglePassCluster():
                     self.cluster_center_vec.append(vec)
                     self.cluster_2_idx[new_cluster_id] = [id_list[idx]]
                     self.cluster_2_hot[new_cluster_id] = [hot_value_list[idx]]
-                    self.cluster_2_hot_perday[new_cluster_id].append(hot_value_perday_list[idx])
+                    self.cluster_2_hot_perday[new_cluster_id] = [hot_value_perday_list[idx]]
                     self.res[new_cluster_id] = {id_list[idx]: self.idx_2_text[idx]}
 
         with open(self.res_path1, "w", encoding="utf-8") as f:
@@ -112,14 +112,18 @@ def get_data():
     hot_value_perday_list=[]
     for idx,summary_id in enumerate(summary_id_list):
         print(summary_id)
-        hot_value = PopRecord.objects.filter(pid=summary_id).all().values('hotval').first()
-        print(hot_value)
-        print(days_list[idx])
+        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().values('hotval').first()
         hot_value_perday=0
+        hot_value=0
+        if hot_value_dic is not None:
+            hot_value = hot_value_dic['hotval']
         if days_list[idx]!=0:
             hot_value_perday = hot_value/days_list[idx]
         else :
             hot_value_perday = hot_value
+        print(hot_value)
+        print(days_list[idx])
+        print(hot_value_perday)
         hot_value_list.append(hot_value)
         hot_value_perday_list.append(hot_value_perday)
     return summary_id_list,summary_list,hot_value_list,hot_value_perday_list
