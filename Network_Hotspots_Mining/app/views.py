@@ -1,16 +1,17 @@
 from django.shortcuts import render,redirect
 from django.http import JsonResponse,HttpResponse
 from app.controller.single_pass import launch_single_pass,get_data
-from app.controller.LLM import LLM_summary, LLM_class
+from app.controller.LLM import LLM_summary, LLM_class, hot_total
 from app.models import Comments,Post,Class
 from app.util.util import querySet_to_list
-from app.misc.data_processing import preprocess_data,days_calculating
+from app.misc.data_processing import preprocess_data,mark_used,days_calculating
 from app.misc.clear_db import clear_db_class,clear_db_summary
 import concurrent.futures
 import os
 import json
 # Create your views here.
 def hello_str(request):
+    mark_used()
     return HttpResponse('Hello,world!')
 
 def hello_json(request):
@@ -59,7 +60,7 @@ def LLM_summary_db(request):
     #     executor.shutdown()
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        id_querySet = Post.objects.values('id').all()
+        id_querySet = Post.objects.filter(is_summaried=False).all().values('id').all()
         id_list = querySet_to_list(id_querySet,'id')
         print(id_list)
         print('wait for result...')
@@ -70,15 +71,16 @@ def LLM_summary_db(request):
         #         print(res)
         #         f.write(res)
 
-    print('LLM_summary_db done!')
+    return HttpResponse('LLM_summary_db done!')
 
 def LLM(request):
     # LLM_summary(post_id=1813553090)
     # print('summary done!')
 
-    launch_single_pass()
-    print('text_cluster done!')
+    # launch_single_pass()
+    # print('text_cluster done!')
 
+    # hot_total()
     LLM_class()
     print('text_cluster_catorizing done!')
 

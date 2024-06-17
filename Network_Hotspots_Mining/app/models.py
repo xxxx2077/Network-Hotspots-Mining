@@ -168,6 +168,7 @@ class Post(models.Model):
     time = models.DateTimeField(blank=True, null=True)
     imgnum = models.IntegerField(db_column='imgNum', blank=True, null=True)  # Field name made lowercase.
     monitoring = models.IntegerField(blank=True, null=True)
+    is_summaried = models.BooleanField(default=False, null=False)
 
     class Meta:
         managed = False
@@ -204,6 +205,7 @@ class Class(models.Model):
     class_title = models.CharField(max_length=100, blank=True, null=True)
     Key_points = models.CharField(max_length=100, blank=True, null=True)
     summary = models.CharField(max_length=1000, blank=True, null=True)
+    hot_value = models.BigIntegerField(null=False)
     class Meta:
         managed = False
         db_table = 'class'

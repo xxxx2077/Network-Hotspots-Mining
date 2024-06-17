@@ -29,4 +29,9 @@ def days_calculating():
             post_local_time = post_time['time']
             days_ = (now_time-post_local_time).days
             Summary.objects.filter(summary_id = summary_id_).update(days=days_)
-    
+
+def mark_used():
+    summary_querySet = Summary.objects.values('summary_id').all()
+    summary_id_list = querySet_to_list(summary_querySet,'summary_id')
+    for summary_id in summary_id_list:
+        Post.objects.filter(id=summary_id).update(is_summaried=True)
