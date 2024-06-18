@@ -99,7 +99,7 @@ def LLM_summary(post_id, task="1"):
             consequences=generated_json.get('consequences'),
         )
         summary.save()
-        Post.objects.filter(id=summary_id).update(is_summaried=True)
+        Post.objects.filter(id=post_id).update(is_summaried=True)
         print('success:')
         print(post_id)
         print(generated_text)
