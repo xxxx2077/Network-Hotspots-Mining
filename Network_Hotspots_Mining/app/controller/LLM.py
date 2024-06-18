@@ -5,15 +5,28 @@ import time
 
 
 def Api(content, task):
+    # 计算 token 数
+    token_count = len(content)
+    print(token_count)
+    # 限制最大 token
+    if token_count > 500:
+        content = content[:500]
+        token_count = len(content)
+        print(token_count)
+
     # 构建 json 请求
+    url = 'https://ample-learning-sloth.ngrok-free.app/v1/chat/completions'
     data = {
         "messages": [{"role": "user", "content": content}],
         "stream": False,
         "task": task
     }
+    headers = {
+        "Content-Type": "application/json"
+    }
 
     # 发送 POST 到 LLM
-    response = requests.post('https://ample-learning-sloth.ngrok-free.app/v1/chat/completions', json=data)
+    response = requests.post(url=url, json=data, headers=headers)
 
     # 检查响应状态码
     if response.status_code == 200:
@@ -23,7 +36,8 @@ def Api(content, task):
 
         return generated_text
     else:
-        return response.status_code
+        print(response.status_code)
+        return None
 
 
 def LLM_summary(post_id, task="1"):
@@ -34,7 +48,8 @@ def LLM_summary(post_id, task="1"):
     # 将标题拼接进去
     content = '事件：' + title + '。' + content
 
-    while True:
+    reset_num = 0
+    while reset_num < 5:
         # 调用 API
         generated_text = Api(content, task)
 
@@ -49,6 +64,7 @@ def LLM_summary(post_id, task="1"):
             print(generated_text)
             print('---')
             content = content + '。注意：每一点后面换行。'
+            reset_num += 1
             continue
 
         # 遍历
@@ -66,15 +82,14 @@ def LLM_summary(post_id, task="1"):
                 print(generated_json['summary'])
             elif line.startswith("影响及后果：") or line.startswith("6. 影响及后果："):
                 generated_json['consequences'] = line.split("影响及后果：")[1].strip()
-            else:
-                break
         # 错误3：格式错误
-        if generated_json['summary'] == "":
+        if 'summary' not in generated_json:
             print('error3:')
             print(post_id)
             print(generated_text)
             print('---')
             content = content + '。注意：按照以下格式简洁明了地总结这一事件：1. 时间：2. 地点：3. 主要参与者：4. 关键点：5. 事件总结：6. 影响及后果：'
+            reset_num += 1
             continue
 
         # 错误2：没有总结部份
@@ -86,6 +101,7 @@ def LLM_summary(post_id, task="1"):
             print('---')
             content = content + '。注意：一定要进行5. 事件总结：'
             print(content)
+            reset_num += 1
             continue
 
         # 成功：存入数据库
@@ -106,11 +122,12 @@ def LLM_summary(post_id, task="1"):
         print('---')
         break
 
+
 def hot_total():
     with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
-    
-    for idx,it in enumerate(content_list):
+
+    for idx, it in enumerate(content_list):
         # print(idx)
         # print(content_list[it])
         hot_total = 0
@@ -120,22 +137,24 @@ def hot_total():
             if hot_value_dic is not None:
                 hot_total += hot_value_dic['hotval']
         # print(hot_total)
-        Class.objects.filter(class_id = idx+1).update(hot_value=hot_total)
-    
+        Class.objects.filter(class_id=idx + 1).update(hot_value=hot_total)
 
-        
 
 def LLM_class(task="2"):
     # 访问 json 文件，获取聚类结果集合
     with open('./app/result/res_total.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
-    
+
     # 遍历每个类别的聚类结果
     for it in content_list:
+        if int(it) < 213:
+            continue
+        print(it)
         # 转换为 JSON 字符串
         content = json.dumps(content_list[it], ensure_ascii=False)
 
-        while True:
+        reset_num = 0
+        while reset_num < 5:
             # 调用 API
             generated_text = Api(content, task)
 
@@ -143,13 +162,13 @@ def LLM_class(task="2"):
             generated_json = {}
             lines = generated_text.split('\n')
 
-            # 错误1：没有分行
-            if len(lines) < 3:
-                print('error1:')
-                print(generated_text)
-                print('---')
-                content = content + '。注意：每一点后面换行。'
-                continue
+            # # 错误1：没有分行
+            # if len(lines) < 3:
+            #     print('error1:')
+            #     print(generated_text)
+            #     print('---')
+            #     content = content + '。注意：每一点后面换行。'
+            #     continue
 
             # 遍历
             for line in lines:
@@ -159,14 +178,14 @@ def LLM_class(task="2"):
                     generated_json['Key_points'] = line.split("关键词：")[1].strip()
                 elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
                     generated_json['summary'] = line.split("事件总结：")[1].strip()
-                else:
-                    break
+
             # 错误3：格式错误
-            if generated_json['summary'] == "":
+            if 'summary' not in generated_json:
                 print('error3:')
                 print(generated_text)
                 print('---')
-                content = content + '。注意：总结出该类别的主要特征，包括但不限于常见1. 类别标题：2. 关键词：3. 事件总结：'
+                content = '注意：总结出该类别的主要特征，包括但不限于常见1. 类别标题：2. 关键词：3. 事件总结：' + content
+                reset_num += 1
                 continue
 
             # 错误2：没有总结部份
@@ -175,7 +194,8 @@ def LLM_class(task="2"):
                 print('error2:')
                 print(generated_text)
                 print('---')
-                content = content + '。注意：一定要进行3. 事件总结：'
+                content = '注意：一定要进行3. 事件总结：' + content
+                reset_num += 1
                 continue
 
             # 成功：存入数据库
@@ -183,7 +203,7 @@ def LLM_class(task="2"):
                 class_title=generated_json.get('class_title'),
                 Key_points=generated_json.get('Key_points'),
                 summary=generated_json.get('summary'),
-                is_used=True
+                # is_used=True
             )
             class_.save()
             print(generated_text)
