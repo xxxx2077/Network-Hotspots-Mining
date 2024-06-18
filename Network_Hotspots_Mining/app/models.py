@@ -201,7 +201,7 @@ class Summary(models.Model):
         db_table = 'summary'
 
 class Class(models.Model):
-    class_id = models.AutoField(primary_key=True)
+    class_id = models.IntegerField(primary_key=True)
     class_title = models.CharField(max_length=100, blank=True, null=True)
     Key_points = models.CharField(max_length=100, blank=True, null=True)
     summary = models.CharField(max_length=1000, blank=True, null=True)
