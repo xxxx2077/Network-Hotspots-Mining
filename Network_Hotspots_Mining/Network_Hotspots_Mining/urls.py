@@ -20,11 +20,7 @@ from app import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('hello/str',views.hello_str),
-    path('hello/json',views.hello_json),
-    path('bilibili/',views.bilibili),
-    path('testdb/',views.testdb),
-    path('test_data/',views.test_data),
+    path('test/',views.test),
     path('preprocess/',views.preprocess),
     path('clear/',views.clear),
     path('LLM/',views.LLM),

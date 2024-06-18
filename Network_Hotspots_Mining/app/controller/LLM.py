@@ -1,4 +1,5 @@
 from app.models import Post, Summary, Class
+from datetime import datetime,timezone
 import requests
 import json
 import time
@@ -105,6 +106,11 @@ def LLM_summary(post_id, task="1"):
             continue
 
         # 成功：存入数据库
+        now_time = datetime.now(timezone.utc)
+        post_time = Post.objects.filter(id=post_id).values('time').first()
+        if post_time:
+            post_local_time = post_time['time']
+            days_ = (now_time-post_local_time).days
         summary = Summary(
             summary_id=int(post_id),
             date=generated_json.get('date'),
@@ -113,37 +119,28 @@ def LLM_summary(post_id, task="1"):
             Key_points=generated_json.get('Key_points'),
             summary=generated_json.get('summary'),
             consequences=generated_json.get('consequences'),
+            days = days_
         )
         summary.save()
         Post.objects.filter(id=post_id).update(is_summaried=True)
+       
+        
         print('success:')
         print(post_id)
         print(generated_text)
         print('---')
         break
 
-
-def hot_total():
-    with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
-        content_list = json.load(file)
-
-    for idx, it in enumerate(content_list):
-        # print(idx)
-        # print(content_list[it])
-        hot_total = 0
-        # print('------')
-        for hot_value_dic in content_list[it]:
-            # print(hot_value_dic)
-            if hot_value_dic is not None:
-                hot_total += hot_value_dic['hotval']
-        # print(hot_total)
-        Class.objects.filter(class_id=idx + 1).update(hot_value=hot_total)
-
-
 def LLM_class(task="2"):
     # 访问 json 文件，获取聚类结果集合
     with open('./app/result/res_total.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
+
+    with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
+        cluster2hot_list = json.load(file)
+    
+    with open('./app/result/res_cluster2hot_perday.json', 'r', encoding='utf-8') as file:
+        cluster2hot_perday_list = json.load(file)
 
     # 遍历每个类别的聚类结果
     for it in content_list:
@@ -199,10 +196,19 @@ def LLM_class(task="2"):
                 continue
 
             # 成功：存入数据库
+            hot_value_total = 0.0
+            hot_value_perday_total = 0.0
+            for hot_value in (cluster2hot_list[it]):
+                hot_value_total += float(hot_value)
+            for hot_value_perday in (cluster2hot_perday_list[it]):
+                hot_value_perday_total += float(hot_value_perday)
             class_ = Class(
+                class_id=it,
                 class_title=generated_json.get('class_title'),
                 Key_points=generated_json.get('Key_points'),
                 summary=generated_json.get('summary'),
+                hot_value = hot_value_total,
+                hot_value_perday = hot_value_perday_total
                 # is_used=True
             )
             class_.save()
@@ -210,4 +216,3 @@ def LLM_class(task="2"):
             print('---')
             break
 
-    hot_total()
