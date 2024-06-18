@@ -5,7 +5,7 @@ import json
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from app.models import Summary,PopRecord
+from app.models import Summary,PopRecord,Post
 from app.util.util import querySet_to_list
 class SinglePassCluster():
     def __init__(self, stopWords_path="app/data/stop_words.txt", my_stopwords=None,
@@ -72,6 +72,7 @@ class SinglePassCluster():
             if not self.cluster_center_vec:
                 self.cluster_center_vec.append(vec)
                 self.cluster_2_idx[0] = [id_list[idx]]
+                Post.objects.filter(id=id_list[idx]).update(class_id=0)
                 self.cluster_2_hot[0] = [hot_value_list[idx]]
                 self.cluster_2_hot_perday[0] = [hot_value_perday_list[idx]]
                 self.res[0] = {id_list[idx]: self.idx_2_text[idx]}
@@ -80,6 +81,7 @@ class SinglePassCluster():
                 max_simi, max_idx = self.cosion_simi(vec)
                 if max_simi >= self.simi_thr:
                     self.cluster_2_idx[max_idx].append(id_list[idx])
+                    Post.objects.filter(id=id_list[idx]).update(class_id=max_idx)
                     self.cluster_2_hot[max_idx].append(hot_value_list[idx])
                     self.cluster_2_hot_perday[max_idx].append(hot_value_perday_list[idx])
                     self.res[max_idx][id_list[idx]] = self.idx_2_text[idx]
@@ -87,6 +89,7 @@ class SinglePassCluster():
                     new_cluster_id = len(self.cluster_2_idx)
                     self.cluster_center_vec.append(vec)
                     self.cluster_2_idx[new_cluster_id] = [id_list[idx]]
+                    Post.objects.filter(id=id_list[idx]).update(class_id=new_cluster_id)
                     self.cluster_2_hot[new_cluster_id] = [hot_value_list[idx]]
                     self.cluster_2_hot_perday[new_cluster_id] = [hot_value_perday_list[idx]]
                     self.res[new_cluster_id] = {id_list[idx]: self.idx_2_text[idx]}
@@ -102,31 +105,28 @@ class SinglePassCluster():
         
         with open(self.res_path4, "w", encoding="utf-8") as f:
             json.dump(self.cluster_2_hot_perday, f, ensure_ascii=False)
+        
+
 
 def get_data():
-    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary_id','summary','days').all()
+    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary_id','summary').all()
     summary_id_list = querySet_to_list(summary_querySet,'summary_id')
     summary_list = querySet_to_list(summary_querySet,'summary')
-    days_list = querySet_to_list(summary_querySet,'days')
     hot_value_list = []
-    hot_value_perday_list=[]
+    hot_value_rate_list=[]
     for idx,summary_id in enumerate(summary_id_list):
         print(summary_id)
-        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().values('hotval').first()
-        hot_value_perday=0
+        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().values('hotval','hotval_rate').first()
+        hot_value_rate=0
         hot_value=0
         if hot_value_dic is not None:
             hot_value = hot_value_dic['hotval']
-        if days_list[idx]!=0:
-            hot_value_perday = hot_value/days_list[idx]
-        else :
-            hot_value_perday = hot_value
+            hot_value_rate = hot_value_dic['hotval_rate']
         print(hot_value)
-        print(days_list[idx])
-        print(hot_value_perday)
+        print(hot_value_rate)
         hot_value_list.append(hot_value)
-        hot_value_perday_list.append(hot_value_perday)
-    return summary_id_list,summary_list,hot_value_list,hot_value_perday_list
+        hot_value_rate_list.append(hot_value_rate)
+    return summary_id_list,summary_list,hot_value_list,hot_value_rate_list
 
 def launch_single_pass():
     # test_data_file = "app/data/data1.txt"

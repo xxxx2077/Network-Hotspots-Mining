@@ -169,6 +169,7 @@ class Post(models.Model):
     imgnum = models.IntegerField(db_column='imgNum', blank=True, null=True)  # Field name made lowercase.
     monitoring = models.IntegerField(blank=True, null=True)
     is_summaried = models.BooleanField(default=False, null=False)
+    class_id = models.IntegerField(null=True)
 
     class Meta:
         managed = False
@@ -195,7 +196,6 @@ class Summary(models.Model):
     summary = models.CharField(max_length=1000, blank=True, null=True)
     consequences = models.CharField(max_length=1000, blank=True, null=True)
     is_abnormal = models.BooleanField(default=False, null=False)
-    days = models.IntegerField(null=False)
     class Meta:
         managed = False
         db_table = 'summary'

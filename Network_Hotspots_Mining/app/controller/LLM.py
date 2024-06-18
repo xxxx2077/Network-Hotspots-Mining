@@ -106,11 +106,6 @@ def LLM_summary(post_id, task="1"):
             continue
 
         # 成功：存入数据库
-        now_time = datetime.now(timezone.utc)
-        post_time = Post.objects.filter(id=post_id).values('time').first()
-        if post_time:
-            post_local_time = post_time['time']
-            days_ = (now_time-post_local_time).days
         summary = Summary(
             summary_id=int(post_id),
             date=generated_json.get('date'),
@@ -118,8 +113,7 @@ def LLM_summary(post_id, task="1"):
             participants=generated_json.get('participants'),
             Key_points=generated_json.get('Key_points'),
             summary=generated_json.get('summary'),
-            consequences=generated_json.get('consequences'),
-            days = days_
+            consequences=generated_json.get('consequences')
         )
         summary.save()
         Post.objects.filter(id=post_id).update(is_summaried=True)
@@ -144,8 +138,8 @@ def LLM_class(task="2"):
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-        if int(it) < 213:
-            continue
+        # if int(it) < 213:
+        #     continue
         print(it)
         # 转换为 JSON 字符串
         content = json.dumps(content_list[it], ensure_ascii=False)
