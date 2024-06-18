@@ -47,7 +47,6 @@ def LLM_summary_db(request):
         #         print(res)
         #         f.write(res)
 
-    days_calculating()
     return HttpResponse('LLM_summary_db done!')
 
 def LLM(request):

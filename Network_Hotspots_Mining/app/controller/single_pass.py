@@ -72,7 +72,7 @@ class SinglePassCluster():
             if not self.cluster_center_vec:
                 self.cluster_center_vec.append(vec)
                 self.cluster_2_idx[0] = [id_list[idx]]
-                Post.objects.filter(id=id_list[idx]).update(class_id=0)
+                Post.objects.filter(id=id_list[idx]).update(class_id=1)
                 self.cluster_2_hot[0] = [hot_value_list[idx]]
                 self.cluster_2_hot_perday[0] = [hot_value_perday_list[idx]]
                 self.res[0] = {id_list[idx]: self.idx_2_text[idx]}
@@ -81,7 +81,7 @@ class SinglePassCluster():
                 max_simi, max_idx = self.cosion_simi(vec)
                 if max_simi >= self.simi_thr:
                     self.cluster_2_idx[max_idx].append(id_list[idx])
-                    Post.objects.filter(id=id_list[idx]).update(class_id=max_idx)
+                    Post.objects.filter(id=id_list[idx]).update(class_id=(max_idx+1))
                     self.cluster_2_hot[max_idx].append(hot_value_list[idx])
                     self.cluster_2_hot_perday[max_idx].append(hot_value_perday_list[idx])
                     self.res[max_idx][id_list[idx]] = self.idx_2_text[idx]
@@ -89,7 +89,7 @@ class SinglePassCluster():
                     new_cluster_id = len(self.cluster_2_idx)
                     self.cluster_center_vec.append(vec)
                     self.cluster_2_idx[new_cluster_id] = [id_list[idx]]
-                    Post.objects.filter(id=id_list[idx]).update(class_id=new_cluster_id)
+                    Post.objects.filter(id=id_list[idx]).update(class_id=(new_cluster_id+1))
                     self.cluster_2_hot[new_cluster_id] = [hot_value_list[idx]]
                     self.cluster_2_hot_perday[new_cluster_id] = [hot_value_perday_list[idx]]
                     self.res[new_cluster_id] = {id_list[idx]: self.idx_2_text[idx]}

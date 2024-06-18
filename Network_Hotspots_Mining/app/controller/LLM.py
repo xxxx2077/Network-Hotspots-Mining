@@ -4,6 +4,10 @@ import requests
 import json
 import time
 
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
+from urllib3.exceptions import InsecureRequestWarning
+
 
 def Api(content, task):
     # 计算 token 数
@@ -26,8 +30,18 @@ def Api(content, task):
         "Content-Type": "application/json"
     }
 
-    # 发送 POST 到 LLM
-    response = requests.post(url=url, json=data, headers=headers)
+    # 配置重试策略
+    retries = Retry(
+        total=5,  # 总重试次数
+        backoff_factor=1,  # 重试间隔时间的增长因子
+        status_forcelist=[500, 502, 503, 504]  # 指定哪些状态码的错误需要重试
+    )
+
+    # 使用 Session 对象发送 LLM 请求
+    with requests.Session() as session:
+        session.mount('https://', HTTPAdapter(max_retries=retries))
+        response = session.post(url=url, json=data, headers=headers)
+    # response = requests.post(url=url, json=data, headers=headers)
 
     # 检查响应状态码
     if response.status_code == 200:
@@ -138,8 +152,7 @@ def LLM_class(task="2"):
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-        # if int(it) < 213:
-        #     continue
+
         print(it)
         # 转换为 JSON 字符串
         content = json.dumps(content_list[it], ensure_ascii=False)
@@ -197,7 +210,7 @@ def LLM_class(task="2"):
             for hot_value_perday in (cluster2hot_perday_list[it]):
                 hot_value_perday_total += float(hot_value_perday)
             class_ = Class(
-                class_id=it,
+                class_id=int(it)+1,
                 class_title=generated_json.get('class_title'),
                 Key_points=generated_json.get('Key_points'),
                 summary=generated_json.get('summary'),
