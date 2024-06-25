@@ -1,5 +1,5 @@
-from app.models import Post, Summary, Class
-from datetime import datetime,timezone
+from app.models import Post, Comments, Summary, Class
+from datetime import datetime, timezone
 import requests
 import json
 import time
@@ -12,12 +12,10 @@ from urllib3.exceptions import InsecureRequestWarning
 def Api(content, task):
     # 计算 token 数
     token_count = len(content)
-    print(token_count)
     # 限制最大 token
     if token_count > 500:
         content = content[:500]
         token_count = len(content)
-        print(token_count)
 
     # 构建 json 请求
     url = 'https://ample-learning-sloth.ngrok-free.app/v1/chat/completions'
@@ -41,7 +39,6 @@ def Api(content, task):
     with requests.Session() as session:
         session.mount('https://', HTTPAdapter(max_retries=retries))
         response = session.post(url=url, json=data, headers=headers)
-    # response = requests.post(url=url, json=data, headers=headers)
 
     # 检查响应状态码
     if response.status_code == 200:
@@ -56,14 +53,23 @@ def Api(content, task):
 
 
 def LLM_summary(post_id, task="1"):
-    # 访问数据库，获取帖子【之后加上自动监测】
+    # 访问数据库，获取帖子和评论
     post = Post.objects.get(id=post_id)
+    comments = Comments.objects.filter(pid=post_id).order_by('likeNum').values_list('content', flat=True)
     title = post.title
     content = post.content
-    # 将标题拼接进去
-    content = '事件：' + title + '。' + content
+    top_comments = list(comments[:3])  # 取前三个
 
-    reset_num = 0
+    # 拼接标题
+    content = '事件：' + title + '。' + content
+    # 拼接评论
+    for comment in top_comments:
+        content = content + '评论：' + comment + '。'
+    # 去掉空格
+    content = ''.join(content.split())
+    print(content)
+
+    reset_num = 0  # 限制错误重试次数
     while reset_num < 5:
         # 调用 API
         generated_text = Api(content, task)
@@ -73,9 +79,10 @@ def LLM_summary(post_id, task="1"):
         lines = generated_text.split('\n')
 
         # 错误1：没有分行
-        if len(lines) < 6:
+        if len(lines) < 7:
             print('error1:')
             print(post_id)
+            print(content)
             print(generated_text)
             print('---')
             content = content + '。注意：每一点后面换行。'
@@ -97,28 +104,37 @@ def LLM_summary(post_id, task="1"):
                 print(generated_json['summary'])
             elif line.startswith("影响及后果：") or line.startswith("6. 影响及后果："):
                 generated_json['consequences'] = line.split("影响及后果：")[1].strip()
-        # 错误3：格式错误
+            elif line.startswith("评论观点：") or line.startswith("7. 评论观点："):
+                generated_json['comments'] = line.split("评论观点：")[1].strip()
+
+        # 错误2：格式错误
         if 'summary' not in generated_json:
-            print('error3:')
+            print('error2:')
             print(post_id)
+            print(content)
             print(generated_text)
             print('---')
             content = content + '。注意：按照以下格式简洁明了地总结这一事件：1. 时间：2. 地点：3. 主要参与者：4. 关键点：5. 事件总结：6. 影响及后果：'
             reset_num += 1
             continue
 
-        # 错误2：没有总结部份
+        # 错误3：没有总结部份
         if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
                 generated_json['summary'] == "None"):
-            print('error2:')
+            print('error3:')
             print(post_id)
+            print(content)
             print(generated_text)
             print('---')
             content = content + '。注意：一定要进行5. 事件总结：'
-            print(content)
             reset_num += 1
             continue
 
+        print('success:')
+        print(post_id)
+        print(content)
+        print(generated_text)
+        print('---')
         # 成功：存入数据库
         summary = Summary(
             summary_id=int(post_id),
@@ -127,37 +143,30 @@ def LLM_summary(post_id, task="1"):
             participants=generated_json.get('participants'),
             Key_points=generated_json.get('Key_points'),
             summary=generated_json.get('summary'),
-            consequences=generated_json.get('consequences')
+            consequences=generated_json.get('consequences'),
+            comments=generated_json.get('comments')
         )
         summary.save()
         Post.objects.filter(id=post_id).update(is_summaried=True)
-       
-        
-        print('success:')
-        print(post_id)
-        print(generated_text)
-        print('---')
         break
+
 
 def LLM_class(task="2"):
     # 访问 json 文件，获取聚类结果集合
     with open('./app/result/res_total.json', 'r', encoding='utf-8') as file:
         content_list = json.load(file)
-
     with open('./app/result/res_cluster2hot.json', 'r', encoding='utf-8') as file:
         cluster2hot_list = json.load(file)
-    
     with open('./app/result/res_cluster2hot_perday.json', 'r', encoding='utf-8') as file:
         cluster2hot_perday_list = json.load(file)
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-
         print(it)
-        # 转换为 JSON 字符串
+        # 转换 json 字符串
         content = json.dumps(content_list[it], ensure_ascii=False)
 
-        reset_num = 0
+        reset_num = 0  # 限制错误重试次数
         while reset_num < 5:
             # 调用 API
             generated_text = Api(content, task)
@@ -165,14 +174,6 @@ def LLM_class(task="2"):
             # 转为 json
             generated_json = {}
             lines = generated_text.split('\n')
-
-            # # 错误1：没有分行
-            # if len(lines) < 3:
-            #     print('error1:')
-            #     print(generated_text)
-            #     print('---')
-            #     content = content + '。注意：每一点后面换行。'
-            #     continue
 
             # 遍历
             for line in lines:
@@ -183,7 +184,7 @@ def LLM_class(task="2"):
                 elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
                     generated_json['summary'] = line.split("事件总结：")[1].strip()
 
-            # 错误3：格式错误
+            # 错误1：格式错误
             if 'summary' not in generated_json:
                 print('error3:')
                 print(generated_text)
@@ -210,16 +211,16 @@ def LLM_class(task="2"):
             for hot_value_perday in (cluster2hot_perday_list[it]):
                 hot_value_perday_total += float(hot_value_perday)
             class_ = Class(
-                class_id=int(it)+1,
+                class_id=int(it) + 1,
                 class_title=generated_json.get('class_title'),
                 Key_points=generated_json.get('Key_points'),
                 summary=generated_json.get('summary'),
-                hot_value = hot_value_total,
-                hot_value_perday = hot_value_perday_total
+                hot_value=hot_value_total,
+                hot_value_perday=hot_value_perday_total
                 # is_used=True
             )
             class_.save()
+            print('success:')
             print(generated_text)
             print('---')
             break
-

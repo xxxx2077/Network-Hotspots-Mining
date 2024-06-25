@@ -37,7 +37,9 @@ def LLM_summary_db(request):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         id_querySet = Post.objects.filter(is_summaried=False).all().values('id').all()
-        id_list = querySet_to_list(id_querySet,'id')
+        id_list = querySet_to_list(id_querySet, 'id')
+        id_list = id_list[:100]
+        print(len(id_list))
         print(id_list)
         print('wait for result...')
         result = executor.map(LLM_summary, id_list)

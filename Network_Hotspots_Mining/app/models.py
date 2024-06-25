@@ -126,7 +126,7 @@ class Comments(models.Model):
     time = models.DateTimeField(blank=True, null=True)
     nickname = models.CharField(max_length=45, blank=True, null=True)
     rid = models.IntegerField(blank=True, null=True, db_comment='回复评论id')
-    likenum = models.IntegerField(db_column='likeNum', blank=True, null=True)  # Field name made lowercase.
+    likeNum = models.IntegerField(db_column='likeNum', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -195,6 +195,7 @@ class Summary(models.Model):
     Key_points = models.CharField(max_length=100, blank=True, null=True)
     summary = models.CharField(max_length=1000, blank=True, null=True)
     consequences = models.CharField(max_length=1000, blank=True, null=True)
+    comments = models.CharField(max_length=1000, blank=True, null=True)
     is_abnormal = models.BooleanField(default=False, null=False)
     class Meta:
         managed = False
