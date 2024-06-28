@@ -183,65 +183,86 @@ def LLM_class(task="2"):
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-        print(it)
-        # 转换 json 字符串
-        content = json.dumps(content_list[it], ensure_ascii=False)
+        if int(it) <= 55:
+            continue
+        try:
+            print(it)
+            # 转换 json 字符串
+            content = json.dumps(content_list[it], ensure_ascii=False)
 
-        reset_num = 0  # 限制错误重试次数
-        while reset_num < 5:
-            # 调用 API
-            generated_text = Api(content, task)
+            reset_num = 0  # 限制错误重试次数
+            while reset_num < 5:
+                # 调用 API
+                generated_text = Api(content, task)
 
-            # 转为 json
-            generated_json = {}
-            lines = generated_text.split('\n')
+                # 转为 json
+                generated_json = {}
+                lines = generated_text.split('\n')
 
-            # 遍历
-            for line in lines:
-                if line.startswith("类别标题：") or line.startswith("1. 类别标题："):
-                    generated_json['class_title'] = line.split("类别标题：")[1].strip()
-                elif line.startswith("关键词：") or line.startswith("2. 关键词："):
-                    generated_json['Key_points'] = line.split("关键词：")[1].strip()
-                elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
-                    generated_json['summary'] = line.split("事件总结：")[1].strip()
+                # 遍历
+                for line in lines:
+                    if line.startswith("类别标题：") or line.startswith("1. 类别标题："):
+                        generated_json['class_title'] = line.split("类别标题：")[1].strip()
+                    elif line.startswith("关键词：") or line.startswith("2. 关键词："):
+                        generated_json['Key_points'] = line.split("关键词：")[1].strip()
+                    elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
+                        generated_json['summary'] = line.split("事件总结：")[1].strip()
 
-            # 错误1：格式错误
-            if 'summary' not in generated_json:
-                print('error3:')
+                # 错误1：格式错误
+                if 'summary' not in generated_json:
+                    print('error1:')
+                    print(content)
+                    print(generated_text)
+                    print('---')
+                    content = '注意：总结出该类别的主要特征，包括但不限于常见1. 类别标题：2. 关键词：3. 事件总结：' + content
+                    reset_num += 1
+                    continue
+
+                # 错误2：没有总结部份
+                if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
+                        generated_json['summary'] == "None"):
+                    print('error2:')
+                    print(content)
+                    print(generated_text)
+                    print('---')
+                    content = '注意：一定要进行3. 事件总结：' + content
+                    reset_num += 1
+                    continue
+
+                # 成功：存入数据库
+                hot_value_total = 0.0
+                hot_value_perday_total = 0.0
+                for hot_value in (cluster2hot_list[it]):
+                    hot_value_total += float(hot_value)
+                for hot_value_perday in (cluster2hot_perday_list[it]):
+                    hot_value_perday_total += float(hot_value_perday)
+                with transaction.atomic():
+                    class_ = Class(
+                        class_id=int(it) + 1,
+                        class_title=generated_json.get('class_title'),
+                        Key_points=generated_json.get('Key_points'),
+                        summary=generated_json.get('summary'),
+                        hot_value=hot_value_total,
+                        hot_value_perday=hot_value_perday_total
+                    )
+                    class_.save()
+                print('success:')
                 print(generated_text)
                 print('---')
-                content = '注意：总结出该类别的主要特征，包括但不限于常见1. 类别标题：2. 关键词：3. 事件总结：' + content
-                reset_num += 1
-                continue
+                break
 
-            # 错误2：没有总结部份
-            if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
-                    generated_json['summary'] == "None"):
-                print('error2:')
+            # 失败
+            if reset_num >= 5:
+                with transaction.atomic():
+                    summary = Summary(
+                        class_id=int(it) + 1,
+                        class_title="None",
+                    )
+                    class_.save()
+                print('fail:')
                 print(generated_text)
                 print('---')
-                content = '注意：一定要进行3. 事件总结：' + content
-                reset_num += 1
-                continue
 
-            # 成功：存入数据库
-            hot_value_total = 0.0
-            hot_value_perday_total = 0.0
-            for hot_value in (cluster2hot_list[it]):
-                hot_value_total += float(hot_value)
-            for hot_value_perday in (cluster2hot_perday_list[it]):
-                hot_value_perday_total += float(hot_value_perday)
-            class_ = Class(
-                class_id=int(it) + 1,
-                class_title=generated_json.get('class_title'),
-                Key_points=generated_json.get('Key_points'),
-                summary=generated_json.get('summary'),
-                hot_value=hot_value_total,
-                hot_value_perday=hot_value_perday_total
-                # is_used=True
-            )
-            class_.save()
-            print('success:')
-            print(generated_text)
-            print('---')
-            break
+        # 线程错误
+        except Exception as e:
+            print(f"Exception occurred for post_id={it}: {e}")

@@ -42,7 +42,6 @@ def LLM_summary_db(request):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         id_querySet = Post.objects.filter(is_summaried=False).values('id').order_by('-time')
         id_list = querySet_to_list(id_querySet, 'id')
-        id_list = id_list[:500]
         print(len(id_list))
         print(id_list)
         print('wait for result...')
@@ -57,7 +56,7 @@ def LLM_summary_db(request):
 
 
 def LLM(request):
-    launch_single_pass()
+    # launch_single_pass()
     LLM_class()
 
     return HttpResponse('text_cluster_catorizing done!')
