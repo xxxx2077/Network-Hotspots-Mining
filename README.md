@@ -15,6 +15,7 @@ pip install Django
 
 ```
 python3 -m django --version
+conda list django
 ```
 
 如果一切顺利，你将看到安装的 Django 版本号，如：**4.2.7**。
