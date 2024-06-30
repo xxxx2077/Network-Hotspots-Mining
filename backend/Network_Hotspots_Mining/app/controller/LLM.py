@@ -84,7 +84,7 @@ def LLM_summary(post_id, task="1"):
             lines = generated_text.split('\n')
 
             # 错误1：没有分行
-            if len(lines) < 7:
+            if len(lines) == 1:
                 print('error1:')
                 print(post_id)
                 print(content)
@@ -183,7 +183,7 @@ def LLM_class(task="2"):
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-        if int(it) <= 55:
+        if int(it) != 162:
             continue
         try:
             print(it)
@@ -199,6 +199,16 @@ def LLM_class(task="2"):
                 generated_json = {}
                 lines = generated_text.split('\n')
 
+                # 错误1：没有分行
+                if len(lines) == 1:
+                    print('error1:')
+                    print(content)
+                    print(generated_text)
+                    print('---')
+                    content = '。注意：每一点后面换行。' + content
+                    reset_num += 1
+                    continue
+
                 # 遍历
                 for line in lines:
                     if line.startswith("类别标题：") or line.startswith("1. 类别标题："):
@@ -208,7 +218,7 @@ def LLM_class(task="2"):
                     elif line.startswith("事件总结：") or line.startswith("3. 事件总结："):
                         generated_json['summary'] = line.split("事件总结：")[1].strip()
 
-                # 错误1：格式错误
+                # 错误2：格式错误
                 if 'summary' not in generated_json:
                     print('error1:')
                     print(content)
@@ -218,14 +228,14 @@ def LLM_class(task="2"):
                     reset_num += 1
                     continue
 
-                # 错误2：没有总结部份
-                if (generated_json['summary'] == "N/A") or (generated_json['summary'] == "无") or (
-                        generated_json['summary'] == "None"):
-                    print('error2:')
+                # 错误3：没有标题部份
+                if (generated_json['class_title'] == "N/A") or (generated_json['class_title'] == "无") or (
+                        generated_json['class_title'] == "None") or (generated_json['class_title'] == "未知"):
+                    print('error3:')
                     print(content)
                     print(generated_text)
                     print('---')
-                    content = '注意：一定要进行3. 事件总结：' + content
+                    content = '注意：一定要进行1. 类别标题：' + content
                     reset_num += 1
                     continue
 
@@ -257,6 +267,8 @@ def LLM_class(task="2"):
                     summary = Summary(
                         class_id=int(it) + 1,
                         class_title="None",
+                        Key_points="None",
+                        summary="None",
                     )
                     class_.save()
                 print('fail:')

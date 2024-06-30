@@ -62,6 +62,8 @@ class SinglePassCluster():
         return max_val, max_idx
 
     def single_pass(self, texts,id_list,hot_value_list,hot_value_perday_list):
+        # print('----------------------------')
+        # print('single_pass is running.....')
         texts_cut = self.cut_sentences(texts)
         tfidf = self.get_tfidf(texts_cut)
         # print(len(tfidf), len(tfidf[0]))
@@ -116,7 +118,7 @@ def get_data():
     hot_value_rate_list=[]
     for idx,summary_id in enumerate(summary_id_list):
         print(summary_id)
-        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().values('hotval','hotval_rate').first()
+        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().order_by('-recordtime').values('hotval','hotval_rate').first()
         hot_value_rate=0
         hot_value=0
         if hot_value_dic is not None:
