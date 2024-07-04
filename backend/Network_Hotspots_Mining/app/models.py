@@ -132,6 +132,7 @@ class Comments(models.Model):
         managed = False
         db_table = 'comments'
 
+
 class Picture(models.Model):
     id = models.CharField(primary_key=True, max_length=25)
     pid = models.IntegerField()
@@ -146,11 +147,16 @@ class Picture(models.Model):
 class PopRecord(models.Model):
     pid = models.IntegerField(db_comment='帖子id')
     hotval = models.IntegerField(db_column='hotVal', blank=True, null=True)  # Field name made lowercase.
-    hotval_rate = models.FloatField(db_column='hotVal_rate', blank=True, null=True, db_comment='热度变化')  # Field name made lowercase.
-    viewnum = models.IntegerField(db_column='viewNum', blank=True, null=True, db_comment='浏览次数')  # Field name made lowercase.
-    likenum = models.IntegerField(db_column='likeNum', blank=True, null=True, db_comment='点赞数')  # Field name made lowercase.
-    comnum = models.IntegerField(db_column='comNum', blank=True, null=True, db_comment='评论数')  # Field name made lowercase.
-    c_likenum = models.IntegerField(db_column='c_likeNum', blank=True, null=True, db_comment='评论点赞总数')  # Field name made lowercase.
+    hotval_rate = models.FloatField(db_column='hotVal_rate', blank=True, null=True,
+                                    db_comment='热度变化')  # Field name made lowercase.
+    viewnum = models.IntegerField(db_column='viewNum', blank=True, null=True,
+                                  db_comment='浏览次数')  # Field name made lowercase.
+    likenum = models.IntegerField(db_column='likeNum', blank=True, null=True,
+                                  db_comment='点赞数')  # Field name made lowercase.
+    comnum = models.IntegerField(db_column='comNum', blank=True, null=True,
+                                 db_comment='评论数')  # Field name made lowercase.
+    c_likenum = models.IntegerField(db_column='c_likeNum', blank=True, null=True,
+                                    db_comment='评论点赞总数')  # Field name made lowercase.
     top = models.IntegerField(blank=True, null=True)
     recordtime = models.DateTimeField(db_column='recordTime', blank=True, null=True)  # Field name made lowercase.
 
@@ -186,6 +192,7 @@ class Users(models.Model):
         managed = False
         db_table = 'users'
 
+
 class Summary(models.Model):
     summary_id = models.AutoField(primary_key=True)
     id = models.IntegerField(blank=True, null=True)
@@ -197,9 +204,11 @@ class Summary(models.Model):
     consequences = models.CharField(max_length=1000, blank=True, null=True)
     comments = models.CharField(max_length=1000, blank=True, null=True)
     is_abnormal = models.BooleanField(default=False, null=False)
+
     class Meta:
         managed = False
         db_table = 'summary'
+
 
 class Class(models.Model):
     class_id = models.IntegerField(primary_key=True)
@@ -208,6 +217,7 @@ class Class(models.Model):
     summary = models.CharField(max_length=1000, blank=True, null=True)
     hot_value = models.BigIntegerField(null=True)
     hot_value_perday = models.BigIntegerField(null=True)
+
     class Meta:
         managed = False
         db_table = 'class'
