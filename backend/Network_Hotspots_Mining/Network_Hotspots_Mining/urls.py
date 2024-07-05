@@ -26,7 +26,11 @@ urlpatterns = [
     path('LLM/',views.LLM),
     path('LLM_summary_db/',views.LLM_summary_db),
 
+    # 主页
     path('hotlist',views.get_hotlist),
     path('speedlist',views.get_speedlist),
-    path('topic', views.get_topic)
+
+    # 话题详细页
+    path('topic/details', views.get_topic_details),
+    path('topic/postlist', views.get_topic_postlist)
 ]
