@@ -139,7 +139,17 @@ def get_speedlist(request):
 
 @require_http_methods(["GET"])
 def get_weekly_event_hotval(request):
-    hotval_threshold = 50  # 设置热度值阈值
+    
+    '''
+    注释的是不经过一定热度值筛选
+    '''
+    # # 获取最近7天的日期
+    # end_date = datetime.date.today()
+    # start_date = end_date - datetime.timedelta(days=7)
+    
+    # # 获取最近7天的所有帖子记录
+    # posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('id', 'time', 'correlation', 'sentiment_negative')
+    # hotval_threshold = 50  # 设置热度值阈值
 
     # 获取最近7天的日期
     end_date = datetime.date.today()
@@ -217,8 +227,18 @@ def get_weekly_event_hotval(request):
 
 @require_http_methods(["GET"])
 def get_weekly_event_counts(request):
+    
+    '''
+    注释的是不经过一定热度值筛选
+    '''
+        
+    # end_date = datetime.date.today()
+    # start_date = end_date - datetime.timedelta(days=7)
+    
+    # # 获取最近7天的所有帖子记录
+    # posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('correlation', 'sentiment_negative')
+    
     hotval_threshold = 50  # 设置热度值阈值
-
     # 获取最近7天的日期
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=7)
@@ -256,10 +276,8 @@ def get_weekly_event_counts(request):
             return 1
         elif row['correlation'] <= 0.75 and row['sentiment_negative'] < -15:
             return 2
-        elif row['correlation'] <= 0.75 and row['sentiment_negative'] >= -15:
-            return 3
         else:
-            return 4
+            return 3
     
     posts_df['category'] = posts_df.apply(classify, axis=1)
     
@@ -269,7 +287,7 @@ def get_weekly_event_counts(request):
     # 确保返回的结构中包含所有需要的分类
     result = {
         "negative": category_counts.get(2, 0),
-        "hotspot": category_counts.get(3, 0) + category_counts.get(4, 0),
+        "hotspot": category_counts.get(3, 0),
         "warning": 0,
         "prewarning": category_counts.get(1, 0)
     }
