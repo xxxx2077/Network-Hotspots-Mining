@@ -9,6 +9,8 @@ from app.util.util import querySet_to_list
 from app.misc.data_processing import preprocess_data, mark_used, days_calculating
 from app.misc.clear_db import clear_db_class, clear_db_summary
 import concurrent.futures
+import datetime
+import pandas as pd
 import os
 import json
 
@@ -135,6 +137,69 @@ def get_speedlist(request):
 
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
+@require_http_methods(["GET"])
+def get_weekly_event_hotval(request):
+    # 获取最近7天的日期
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=7)
+    
+    # 获取最近7天的所有帖子记录
+    posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('id', 'time', 'correlation', 'sentiment_negative')
+    
+    # 转换为DataFrame
+    posts_df = pd.DataFrame(posts)
+    
+    if posts_df.empty:
+        return JsonResponse({"data": []})
+    
+    # 将时间转换为日期
+    posts_df['date'] = posts_df['time'].dt.date
+    
+    # 获取相关帖子最新的pop记录
+    pop_records = PopRecord.objects.filter(pid__in=posts_df['id']).values('pid', 'hotval', 'recordtime')
+    pop_records_df = pd.DataFrame(pop_records).sort_values('recordtime').drop_duplicates('pid', keep='last')
+    
+    # 合并数据
+    merged_df = posts_df.merge(pop_records_df, left_on='id', right_on='pid', how='left')
+    
+    # 替换缺失的hotval为0
+    merged_df['hotval'] = merged_df['hotval'].fillna(0).astype(int)
+    
+    # 根据条件分类
+    def classify(row):
+        if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
+            return 1
+        elif row['correlation'] <= 0.75 and row['sentiment_negative'] < -15:
+            return 2
+        elif row['correlation'] <= 0.75 and row['sentiment_negative'] >= -15:
+            return 3
+        else:
+            return 4
+    
+    merged_df['category'] = merged_df.apply(classify, axis=1)
+    
+    # 按日期和分类分组并求和
+    grouped_df = merged_df.groupby(['date', 'category'])['hotval'].sum().unstack(fill_value=0).reset_index()
+    
+    # 确保有所有需要的分类
+    for category in [1, 2, 3, 4]:
+        if category not in grouped_df:
+            grouped_df[category] = 0
+    
+    # 准备返回的数据结构
+    data = []
+    for _, row in grouped_df.iterrows():
+        daily_data = {
+            "1": row.get(1, 0),
+            "2": row.get(2, 0),
+            "3": row.get(3, 0),
+            "4": row.get(4, 0),
+            "date": row['date'].strftime("%Y-%m-%d")
+        }
+        data.append(daily_data)
+    
+    # 返回JSON响应
+    return JsonResponse({"data": data})
 
 '''
 话题详情页面接口

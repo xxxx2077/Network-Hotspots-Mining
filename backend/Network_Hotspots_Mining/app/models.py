@@ -93,7 +93,7 @@ class Class(models.Model):
 class Comments(models.Model):
     id = models.IntegerField(primary_key=True)
     pid = models.IntegerField(db_comment='所属帖子id')
-    content = models.CharField(max_length=200, blank=True, null=True)
+    content = models.CharField(max_length=400, blank=True, null=True)
     time = models.DateTimeField(blank=True, null=True)
     nickname = models.CharField(max_length=45, blank=True, null=True)
     rid = models.IntegerField(blank=True, null=True, db_comment='回复评论id')
@@ -154,7 +154,7 @@ class Picture(models.Model):
     id = models.CharField(primary_key=True, max_length=25)
     pid = models.IntegerField()
     imgurl = models.CharField(db_column='imgURL', max_length=100, blank=True, null=True)  # Field name made lowercase.
-    ocr = models.CharField(max_length=2000, blank=True, null=True)
+    ocr = models.CharField(max_length=3000, blank=True, null=True)
 
     class Meta:
         managed = False
