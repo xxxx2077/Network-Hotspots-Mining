@@ -64,61 +64,79 @@ def LLM(request):
     return HttpResponse('text_cluster_catorizing done!')
 
 
+
+'''
+主页接口
+'''
+
+
 # 获取热榜
 @require_http_methods(["GET"])
 def get_hotlist(request):
-    try:
-        class_query_set = Class.objects.all().values(
-            'class_id',
-            'class_title',
-            'summary',
-            'hot_value'
-        ).order_by('-hot_value')
-        class_list = [
-            {
-                'id': item['class_id'],
-                'class': item['class_title'],
-                'topic': item['summary'],
-                'value': item['hot_value']
-            }
-            for item in class_query_set
-        ]
-        response_data = {
-            "data": class_list,
-        }
-        return JsonResponse(response_data)
-    except Exception as e:
-        # 返回错误
-        return JsonResponse({'error': e})
+    # 获取满足条件的前十条记录，按 hot_value 从高到低排序
+    class_querySet = Class.objects.filter(hot_value__gte=200).order_by('-hot_value')[:10]
 
+    # 构建返回的数据
+    response_data = {
+        "data": [
+            {
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value
+            } for cls in class_querySet
+        ]
+    }
+    
+    if len(class_querySet) == 10:
+        # 尝试获取更多热度大于x值的记录
+        additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(pk__in=[cls.pk for cls in class_querySet])
+        for cls in additional_querySet:
+            response_data["data"].append({
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value
+            })
+    
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 # 获取热度上升榜
 @require_http_methods(["GET"])
 def get_speedlist(request):
-    try:
-        class_query_set = Class.objects.all().values(
-            'class_id',
-            'class_title',
-            'summary',
-            'hot_value_perday'
-        ).order_by('-hot_value_perday')
-        class_list = [
-            {
-                'id': item['class_id'],
-                'class': item['class_title'],
-                'topic': item['summary'],
-                'value': item['hot_value_perday']
-            }
-            for item in class_query_set
-        ]
-        response_data = {
-            "data": class_list,
-        }
-        return JsonResponse(response_data)
-    except Exception as e:
-        # 返回错误
-        return JsonResponse({'error': e})
+    # 获取满足条件的前十条记录，按 hot_value_rate 从高到低排序
+    class_querySet = Class.objects.filter(hot_value_perday__gte=100).order_by('-hot_value_perday')[:10]
 
+    # 构建返回的数据
+    response_data = {
+        "data": [
+            {
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value_perday
+            } for cls in class_querySet
+        ]
+    }
+    
+    if len(class_querySet) == 10:
+        # 尝试获取更多热度大于x值的记录
+        additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(pk__in=[cls.pk for cls in class_querySet])
+        for cls in additional_querySet:
+            response_data["data"].append({
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value_perday
+            })
+    
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+
+
+
+'''
+话题详情页面接口
+'''
 
 # 获取话题详情
 @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
