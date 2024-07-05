@@ -10,7 +10,6 @@ from app.misc.clear_db import clear_db_class, clear_db_summary
 import concurrent.futures
 import os
 import json
-from django.db.models import Q
 
 from django.views.decorators.http import require_http_methods
 
@@ -64,71 +63,6 @@ def LLM(request):
 
     return HttpResponse('text_cluster_catorizing done!')
 
-<<<<<<< HEAD
-#获取热榜
-def get_hotlist(request):
-    # 获取满足条件的前十条记录，按 hot_value 从高到低排序
-    class_querySet = Class.objects.filter(hot_value__gte=200).order_by('-hot_value')[:10]
-
-    # 构建返回的数据
-    response_data = {
-        "data": [
-            {
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value
-            } for cls in class_querySet
-        ]
-    }
-    
-    if len(class_querySet) == 10:
-        # 尝试获取更多热度大于x值的记录
-        additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(pk__in=[cls.pk for cls in class_querySet])
-        for cls in additional_querySet:
-            response_data["data"].append({
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value
-            })
-    
-    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
-
-
-#获取热度上升榜
-def get_speedlist(request):
-    # 获取满足条件的前十条记录，按 hot_value_rate 从高到低排序
-    class_querySet = Class.objects.filter(hot_value_perday__gte=100).order_by('-hot_value_perday')[:10]
-
-    # 构建返回的数据
-    response_data = {
-        "data": [
-            {
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value_perday
-            } for cls in class_querySet
-        ]
-    }
-    
-    if len(class_querySet) == 10:
-        # 尝试获取更多热度大于x值的记录
-        additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(pk__in=[cls.pk for cls in class_querySet])
-        for cls in additional_querySet:
-            response_data["data"].append({
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value_perday
-            })
-    
-    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
-
-
-
-=======
 
 # 获取热榜
 @require_http_methods(["GET"])
@@ -202,29 +136,24 @@ def get_topic_details(request):
                 pid=OuterRef('id')
             ).order_by('-recordtime').values('viewnum')[:1]
 
-            # 话题访问量
-            post = Post.objects.filter(
-                class_id=OuterRef('class_id')
+            # 话题最新访问量
+            topic_latest_viewnum = Post.objects.filter(
+                class_id=topic_id
             ).annotate(
                 latest_views = Subquery(latest_viewnum),
-                total_views = Sum('latest_views')
-            ).values('total_views')
+            ).values('latest_views')
+
+            # 话题总访问量
+            topic_views = topic_latest_viewnum.aggregate(total_views=Sum('latest_views'))
 
             # 话题详情
-            topic = Class.objects.filter(class_id=topic_id).annotate(
-                total_views=Subquery(post)
-            ).values(
-                'class_title',
-                'summary',
-                'hot_value',
-                'total_views'
-            )
+            topic = Class.objects.get(class_id=topic_id)
             response_data = {
-                'topic': topic[0]['class_title'],
-                # 'content': topic[0].summary,
-                # 'hotValue': topic[0].hot_value,
-                # 'warnValue': 0,
-                # 'visits': topic[0].total_views
+                'topic': topic.class_title,
+                'content': topic.summary,
+                'hotValue': topic.hot_value,
+                'warnValue': 0,
+                'visits': topic_views['total_views']
             }
             return JsonResponse(response_data, safe=False)
         except Exception as e:
@@ -344,4 +273,3 @@ def get_topic_postlist(request):
     else:
         # 返回400 Bad Request响应
         return JsonResponse({'error': 'Missing topicID'}, status=400)
->>>>>>> 86f9bd6e84b0cce088c8fc3df1b84496c1cbf66b
