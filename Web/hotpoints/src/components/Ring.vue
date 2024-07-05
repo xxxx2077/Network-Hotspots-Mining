@@ -61,6 +61,14 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        // 窗口大小改变更新图表
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
+    },
+    destroyed() {
+        this.chartInstance.dispose();
+        window.removeEventListener("resize", this.chartInstance);
     },
     methods: {
         initChart() {
@@ -74,6 +82,11 @@ export default {
                     this.option.series[0].data.push(data);
                 }
             }
+            this.chartInstance.setOption(this.option);
+        }
+    },
+    watch: {
+        valueData(newVal) {
             this.chartInstance.setOption(this.option);
         }
     }

@@ -19,7 +19,7 @@
       <el-col :span="10" style="height: 100%;">
         <dv-border-box-12 style="height: 65%;">
           <BasicBar titleText="本周热度数据统计" :barNum="4" :barName="['负面事件', '二类', '三类', '四类']" :xData="weekHotPointX"
-            :barData="weekHotPointData"></BasicBar>
+            :barData="weekHotPointData" :flag="weekHotPointFlag"></BasicBar>
         </dv-border-box-12>
         <dv-border-box-12 style="height: 35%;">
           <el-row style="height: 100%;">
@@ -57,7 +57,7 @@
       <el-col :span="7" style="height: 100%;">
         <dv-border-box-12>
           <BasicBar titleText="中大词条浏览周统计" :barNum="2" :barName="['负面事件', '热点事件']" :xData="weekEntryX"
-            :barData="weekEntryData">
+            :barData="weekEntryData" :flag="weekEntryFlag">
           </BasicBar>
         </dv-border-box-12>
       </el-col>
@@ -120,11 +120,13 @@ export default {
         [106, 158, 148, 160, 207, 176, 194],
         [150, 144, 135, 142, 167, 175, 214]
       ],
+      weekHotPointFlag: false,
       weekEntryX: ['4月二周', '4月三周', '4月四周', '4月五周', '5月一周'],
       weekEntryData: [
         [60, 65, 61, 32, 72],
         [43, 37, 57, 35, 52]
       ],
+      weekEntryFlag: false,
       monthEntryX: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
       monthEntryData: [64, 71, 84, 51, 54, 62, 59, 78, 94, 84, 74, 68],
       weekAddData1: [
