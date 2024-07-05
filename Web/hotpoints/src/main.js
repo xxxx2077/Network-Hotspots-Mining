@@ -13,9 +13,4 @@ Vue.use(ElementUI)
 new Vue({
   router,
   render: h => h(App),
-  data() {
-    return {
-      topic: '',
-    }
-  }
 }).$mount('#app')

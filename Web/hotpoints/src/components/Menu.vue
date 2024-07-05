@@ -26,7 +26,7 @@ export default {
                 path: '/'
             }, {
                 section: '话题详情',
-                path: '/menu/topic'
+                path: '/menu/topic/:id'
             },]
         }
     },

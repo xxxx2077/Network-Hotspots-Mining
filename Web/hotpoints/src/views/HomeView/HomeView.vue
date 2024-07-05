@@ -41,7 +41,7 @@
           <span>实时热点榜</span>
           <div style="width: 90%; height: 90%;">
             <Carousel :header="['类型', '事件', '热度']" :data="hotpointData" :rowNum="8" :columnWidth="[50, 85, 200, 80]"
-              :flag="hotpointDataFlag" :onClick="clickCarousel">
+              :flag="hotpointDataFlag" :onClick="clickHotList">
             </Carousel>
           </div>
         </dv-border-box-12>
@@ -66,7 +66,7 @@
           <span>热度上升榜</span>
           <div style="width: 90%; height: 83%;">
             <Carousel :header="['类型', '事件', '速度']" :data="hotpointSpeed" :rowNum="5" :columnWidth="[50, 85, 200, 80]"
-              :flag="hotpointSpeedFlag" :onClick="clickCarousel">
+              :flag="hotpointSpeedFlag" :onClick="clickSpeedList">
             </Carousel>
           </div>
         </dv-border-box-12>
@@ -183,11 +183,13 @@ export default {
     })
   },
   methods: {
-    clickCarousel(config) {
-      console.log(config.rowIndex);
-      this.$root.topic = config.row[2];
-      console.log(this.$root.topic);
-      this.$router.push('/menu/topic');
+    clickHotList(config) {
+      const index = config.rowIndex;
+      this.$router.push({ name: 'Topic', params: { id: this.hotpointRawData[index].id } });
+    },
+    clickSpeedList(config) {
+      const index = config.rowIndex;
+      this.$router.push({ name: 'Topic', params: { id: this.hotpointRawSpeed[index].id } });
     }
   }
 }
