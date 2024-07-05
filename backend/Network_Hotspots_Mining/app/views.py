@@ -10,6 +10,7 @@ from app.misc.test import fuck
 import concurrent.futures
 import os
 import json
+from django.db.models import Q
 
 
 # Create your views here.
@@ -61,21 +62,66 @@ def LLM(request):
 
     return HttpResponse('text_cluster_catorizing done!')
 
-
+#获取热榜
 def get_hotlist(request):
-    class_querySet = Class.objects.all().values('class_title', 'summary', 'hot_value').order_by('hot_value').all()
-    # hotlist_json = json.dumps(class_querySet, ensure_ascii=False)
+    # 获取满足条件的前十条记录，按 hot_value 从高到低排序
+    class_querySet = Class.objects.filter(hot_value__gte=200).order_by('-hot_value')[:10]
+
+    # 构建返回的数据
     response_data = {
-        "data": list(class_querySet),
+        "data": [
+            {
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value
+            } for cls in class_querySet
+        ]
     }
-    return JsonResponse(response_data)
+    
+    if len(class_querySet) == 10:
+        # 尝试获取更多热度大于x值的记录
+        additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(pk__in=[cls.pk for cls in class_querySet])
+        for cls in additional_querySet:
+            response_data["data"].append({
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value
+            })
+    
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 
+#获取热度上升榜
 def get_speedlist(request):
-    class_querySet = Class.objects.all().values('class_title', 'summary', 'hot_value_perday').order_by(
-        'hot_value_perday').all()
-    # speedlist_json = json.dumps(class_querySet, ensure_ascii=False)
+    # 获取满足条件的前十条记录，按 hot_value_rate 从高到低排序
+    class_querySet = Class.objects.filter(hot_value_perday__gte=100).order_by('-hot_value_perday')[:10]
+
+    # 构建返回的数据
     response_data = {
-        "data": list(class_querySet),
+        "data": [
+            {
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value_perday
+            } for cls in class_querySet
+        ]
     }
-    return JsonResponse(response_data)
+    
+    if len(class_querySet) == 10:
+        # 尝试获取更多热度大于x值的记录
+        additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(pk__in=[cls.pk for cls in class_querySet])
+        for cls in additional_querySet:
+            response_data["data"].append({
+                "id": cls.class_id,
+                "class": "负面事件",
+                "topic": cls.class_title,
+                "value": cls.hot_value_perday
+            })
+    
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+
+
+
