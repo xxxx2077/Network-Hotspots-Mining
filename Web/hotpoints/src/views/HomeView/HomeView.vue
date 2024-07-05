@@ -41,7 +41,7 @@
           <span>实时热点榜</span>
           <div style="width: 90%; height: 90%;">
             <Carousel :header="['类型', '事件', '热度']" :data="hotpointData" :rowNum="8" :columnWidth="[50, 85, 200, 80]"
-              :onClick="clickCarousel">
+              :flag="hotpointDataFlag" :onClick="clickCarousel">
             </Carousel>
           </div>
         </dv-border-box-12>
@@ -66,7 +66,7 @@
           <span>热度上升榜</span>
           <div style="width: 90%; height: 83%;">
             <Carousel :header="['类型', '事件', '速度']" :data="hotpointSpeed" :rowNum="5" :columnWidth="[50, 85, 200, 80]"
-              :onClick="clickCarousel">
+              :flag="hotpointSpeedFlag" :onClick="clickCarousel">
             </Carousel>
           </div>
         </dv-border-box-12>
@@ -135,37 +135,31 @@ export default {
         { name: '舆情预警', value: 12 },
         { name: '系统警告', value: 3 },
       ],
-      hotpointData: [
-        ['行1列1', '很长很长很长很长很长很长的数据', '行1列3'],
-        ['行2列1', '行2列2', 23],
-        ['行3列1', '行3列2', 43],
-        ['行4列1', '行4列2', '行4列3'],
-        ['行5列1', '行5列2', '行5列3'],
-        ['行6列1', '行6列2', '行6列3'],
-        ['行7列1', '行7列2', '行7列3'],
-        ['行8列1', '行8列2', '行8列3'],
-        ['行9列1', '行9列2', '行9列3'],
-        ['负面事件', '行10列2', '行10列3']
-      ],
-      hotpointSpeed: [
-        ['行1列1', '很长很长很长很长很长很长的数据', '行1列3'],
-        ['行2列1', '行2列2', '行2列3'],
-        ['行3列1', '行3列2', '行3列3'],
-        ['行4列1', '行4列2', '行4列3'],
-        ['行5列1', '行5列2', '行5列3'],
-        ['行6列1', '行6列2', '行6列3'],
-        ['行7列1', '行7列2', '行7列3'],
-        ['行8列1', '行8列2', '行8列3'],
-        ['行9列1', '行9列2', '行9列3'],
-        ['负面事件', '行10列2', '行10列3']
-      ],
+      hotpointRawData: [],
+      hotpointData: [['', '', '']],
+      hotpointDataFlag: false,
+      hotpointRawSpeed: [],
+      hotpointSpeed: [['', '', '']],
+      hotpointSpeedFlag: false,
     };
   },
   created() {
+
+  },
+  mounted() {
     // 获取热榜
     getHotPointList().then((res) => {
       if (res.status == 200) {
-        this.hotpointData = res.data.data;
+        this.hotpointRawData = res.data.data;
+        // 整理成二维数组
+        this.hotpointData.pop();
+        for (let obj of this.hotpointRawData) {
+          const arr = Object.keys(obj).map(item => obj[item]);
+          arr.shift();
+          this.hotpointData.push(arr);
+        }
+        // console.log(this.hotpointData);
+        this.hotpointDataFlag = !this.hotpointDataFlag;
       }
     }).catch((err) => {
       console.log(err);
@@ -174,14 +168,19 @@ export default {
     // 获取热度上升榜
     getSpeedList().then((res) => {
       if (res.status == 200) {
-        this.hotpointSpeed = res.data.data;
+        this.hotpointRawSpeed = res.data.data;
+        // 整理成二维数组
+        this.hotpointSpeed.pop();
+        for (let obj of this.hotpointRawSpeed) {
+          const arr = Object.keys(obj).map(item => obj[item]);
+          arr.shift();
+          this.hotpointSpeed.push(arr);
+        }
+        this.hotpointSpeedFlag = !this.hotpointSpeedFlag;
       }
     }).catch((err) => {
       console.log(err);
     })
-  },
-  mounted() {
-
   },
   methods: {
     clickCarousel(config) {
