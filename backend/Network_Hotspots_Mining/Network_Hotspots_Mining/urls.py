@@ -19,13 +19,14 @@ from django.urls import path
 from app import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('test/',views.test),
-    path('preprocess/',views.preprocess),
+    # path('admin/', admin.site.urls),
+    # path('test/',views.test),
+    # path('preprocess/',views.preprocess),
     path('clear/',views.clear),
     path('LLM/',views.LLM),
     path('LLM_summary_db/',views.LLM_summary_db),
 
     path('hotlist',views.get_hotlist),
-    path('speedlist',views.get_speedlist)
+    path('speedlist',views.get_speedlist),
+    path('topic', views.get_topic)
 ]

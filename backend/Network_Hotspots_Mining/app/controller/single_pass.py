@@ -5,13 +5,15 @@ import json
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from app.models import Summary,PopRecord,Post
+from app.models import Summary, PopRecord, Post
 from app.util.util import querySet_to_list
+
+
 class SinglePassCluster():
     def __init__(self, stopWords_path="app/data/stop_words.txt", my_stopwords=None,
                  max_df=0.5, max_features=1000,
-                 simi_threshold=0.5, res_save_path1="app/result/res_cluster2idx.json", 
-                 res_save_path2="app/result/res_total.json",res_save_path3="app/result/res_cluster2hot.json",
+                 simi_threshold=0.5, res_save_path1="app/result/res_cluster2idx.json",
+                 res_save_path2="app/result/res_total.json", res_save_path3="app/result/res_cluster2hot.json",
                  res_save_path4="app/result/res_cluster2hot_perday.json"):
         self.stopwords = self.load_stopwords(stopWords_path)
         if isinstance(my_stopwords, list):
@@ -50,7 +52,7 @@ class SinglePassCluster():
         texts_cut = [" ".join(jieba.lcut(t)) for t in texts]
         self.idx_2_text = {idx: text for idx, text in enumerate(texts)}
         return texts_cut
-    
+
     def get_tfidf(self, texts_cut):
         tfidf = self.tfidf.fit_transform(texts_cut)
         return tfidf.todense().tolist()
@@ -61,7 +63,7 @@ class SinglePassCluster():
         max_val = simi[0][max_idx]
         return max_val, max_idx
 
-    def single_pass(self, texts,id_list,hot_value_list,hot_value_perday_list):
+    def single_pass(self, texts, id_list, hot_value_list, hot_value_perday_list):
         # print('----------------------------')
         # print('single_pass is running.....')
         texts_cut = self.cut_sentences(texts)
@@ -83,7 +85,7 @@ class SinglePassCluster():
                 max_simi, max_idx = self.cosion_simi(vec)
                 if max_simi >= self.simi_thr:
                     self.cluster_2_idx[max_idx].append(id_list[idx])
-                    Post.objects.filter(id=id_list[idx]).update(class_id=(max_idx+1))
+                    Post.objects.filter(id=id_list[idx]).update(class_id=(max_idx + 1))
                     self.cluster_2_hot[max_idx].append(hot_value_list[idx])
                     self.cluster_2_hot_perday[max_idx].append(hot_value_perday_list[idx])
                     self.res[max_idx][id_list[idx]] = self.idx_2_text[idx]
@@ -91,7 +93,7 @@ class SinglePassCluster():
                     new_cluster_id = len(self.cluster_2_idx)
                     self.cluster_center_vec.append(vec)
                     self.cluster_2_idx[new_cluster_id] = [id_list[idx]]
-                    Post.objects.filter(id=id_list[idx]).update(class_id=(new_cluster_id+1))
+                    Post.objects.filter(id=id_list[idx]).update(class_id=(new_cluster_id + 1))
                     self.cluster_2_hot[new_cluster_id] = [hot_value_list[idx]]
                     self.cluster_2_hot_perday[new_cluster_id] = [hot_value_perday_list[idx]]
                     self.res[new_cluster_id] = {id_list[idx]: self.idx_2_text[idx]}
@@ -101,26 +103,26 @@ class SinglePassCluster():
 
         with open(self.res_path2, "w", encoding="utf-8") as f:
             json.dump(self.res, f, ensure_ascii=False)
-        
+
         with open(self.res_path3, "w", encoding="utf-8") as f:
             json.dump(self.cluster_2_hot, f, ensure_ascii=False)
-        
+
         with open(self.res_path4, "w", encoding="utf-8") as f:
             json.dump(self.cluster_2_hot_perday, f, ensure_ascii=False)
-        
 
 
 def get_data():
-    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary_id','summary').all()
-    summary_id_list = querySet_to_list(summary_querySet,'summary_id')
-    summary_list = querySet_to_list(summary_querySet,'summary')
+    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary_id', 'summary').all()
+    summary_id_list = querySet_to_list(summary_querySet, 'summary_id')
+    summary_list = querySet_to_list(summary_querySet, 'summary')
     hot_value_list = []
-    hot_value_rate_list=[]
-    for idx,summary_id in enumerate(summary_id_list):
+    hot_value_rate_list = []
+    for idx, summary_id in enumerate(summary_id_list):
         print(summary_id)
-        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().order_by('-recordtime').values('hotval','hotval_rate').first()
-        hot_value_rate=0
-        hot_value=0
+        hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().order_by('-recordtime').values('hotval',
+                                                                                                      'hotval_rate').first()
+        hot_value_rate = 0
+        hot_value = 0
         if hot_value_dic is not None:
             hot_value = hot_value_dic['hotval']
             hot_value_rate = hot_value_dic['hotval_rate']
@@ -128,14 +130,15 @@ def get_data():
         print(hot_value_rate)
         hot_value_list.append(hot_value)
         hot_value_rate_list.append(hot_value_rate)
-    return summary_id_list,summary_list,hot_value_list,hot_value_rate_list
+    return summary_id_list, summary_list, hot_value_list, hot_value_rate_list
+
 
 def launch_single_pass():
     # test_data_file = "app/data/data1.txt"
-    summary_id_list,summary_list,hot_value_list,hot_value_perday_list = get_data()
+    summary_id_list, summary_list, hot_value_list, hot_value_perday_list = get_data()
     cluster = SinglePassCluster(max_features=100, simi_threshold=0.1)
-    cluster.single_pass(summary_list,summary_id_list,hot_value_list,hot_value_perday_list)
-    
+    cluster.single_pass(summary_list, summary_id_list, hot_value_list, hot_value_perday_list)
+
 # if __name__ == "__main__":
 #     test_data = "../data/data1.txt"
 #     cluster = SinglePassCluster(max_features=100, simi_threshold=0.1)
