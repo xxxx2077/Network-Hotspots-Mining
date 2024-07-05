@@ -53,7 +53,7 @@ export default {
                                 formatter: '{b}\n{c}',
                             }
                         },
-                        data: this.$props.valueData
+                        data: []
                     }
                 ]
             }
@@ -78,7 +78,7 @@ export default {
         updateChart() {
             if (this.$props.color.length !== 0) {
                 for (var i = 0; i < this.$props.valueData.length; i++) {
-                    var data = this.option.series[0].data.shift();
+                    var data = this.$props.valueData[i];
                     this.$set(data, 'itemStyle', { color: this.$props.color[i] });
                     this.option.series[0].data.push(data);
                 }

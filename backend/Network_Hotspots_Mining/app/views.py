@@ -149,7 +149,7 @@ def get_weekly_event_hotval(request):
     
     # # 获取最近7天的所有帖子记录
     # posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('id', 'time', 'correlation', 'sentiment_negative')
-    # hotval_threshold = 50  # 设置热度值阈值
+    hotval_threshold = 50  # 设置热度值阈值
 
     # 获取最近7天的日期
     end_date = datetime.date.today()

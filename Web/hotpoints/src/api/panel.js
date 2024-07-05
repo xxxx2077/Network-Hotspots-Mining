@@ -23,3 +23,11 @@ export function getClassHotVal() {
         method: 'GET'
     })
 }
+
+// 本周新增统计
+export function getWeekAdded() {
+    return request({
+        url: '/weekAdded',
+        method: 'GET'
+    })
+}
