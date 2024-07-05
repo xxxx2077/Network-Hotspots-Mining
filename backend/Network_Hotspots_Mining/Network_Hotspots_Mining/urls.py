@@ -30,6 +30,7 @@ urlpatterns = [
     path('hotlist',views.get_hotlist),
     path('speedlist',views.get_speedlist),
     path('classHotValue', views.get_weekly_event_hotval),
+    path('weekAdded', views.get_weekly_event_counts),
 
     # 话题详细页
     path('topic/details', views.get_topic_details),

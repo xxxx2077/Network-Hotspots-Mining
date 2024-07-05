@@ -139,12 +139,25 @@ def get_speedlist(request):
 
 @require_http_methods(["GET"])
 def get_weekly_event_hotval(request):
+    hotval_threshold = 50  # 设置热度值阈值
+
     # 获取最近7天的日期
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=7)
     
-    # 获取最近7天的所有帖子记录
-    posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('id', 'time', 'correlation', 'sentiment_negative')
+    # 获取最新的poprecord记录并且hotval大于阈值
+    latest_poprecord = PopRecord.objects.filter(
+        pid=OuterRef('pk')
+    ).order_by('-recordtime')
+    
+    # 获取最近7天且符合条件的所有帖子记录
+    posts = Post.objects.annotate(
+        latest_hotval=Subquery(latest_poprecord.values('hotval')[:1])
+    ).filter(
+        time__gte=start_date,
+        time__lt=end_date,
+        latest_hotval__gte=hotval_threshold
+    ).values('id', 'time', 'correlation', 'sentiment_negative')
     
     # 转换为DataFrame
     posts_df = pd.DataFrame(posts)
@@ -200,6 +213,69 @@ def get_weekly_event_hotval(request):
     
     # 返回JSON响应
     return JsonResponse({"data": data})
+
+
+@require_http_methods(["GET"])
+def get_weekly_event_counts(request):
+    hotval_threshold = 50  # 设置热度值阈值
+
+    # 获取最近7天的日期
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=7)
+    
+    # 获取最新的poprecord记录并且hotval大于阈值
+    latest_poprecord = PopRecord.objects.filter(
+        pid=OuterRef('pk')
+    ).order_by('-recordtime')
+    
+    # 获取最近7天且符合条件的所有帖子记录
+    posts = Post.objects.annotate(
+        latest_hotval=Subquery(latest_poprecord.values('hotval')[:1])
+    ).filter(
+        time__gte=start_date,
+        time__lt=end_date,
+        latest_hotval__gte=hotval_threshold
+    ).values('correlation', 'sentiment_negative')
+    
+    # 转换为DataFrame
+    posts_df = pd.DataFrame(posts)
+    
+    if posts_df.empty:
+        return JsonResponse({
+            "data": {
+                "negative": 0,
+                "hotspot": 0,
+                "warning": 0,
+                "prewarning": 0
+            }
+        })
+    
+    # 根据条件分类
+    def classify(row):
+        if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
+            return 1
+        elif row['correlation'] <= 0.75 and row['sentiment_negative'] < -15:
+            return 2
+        elif row['correlation'] <= 0.75 and row['sentiment_negative'] >= -15:
+            return 3
+        else:
+            return 4
+    
+    posts_df['category'] = posts_df.apply(classify, axis=1)
+    
+    # 统计每个分类的数量
+    category_counts = posts_df['category'].value_counts().to_dict()
+    
+    # 确保返回的结构中包含所有需要的分类
+    result = {
+        "negative": category_counts.get(2, 0),
+        "hotspot": category_counts.get(3, 0) + category_counts.get(4, 0),
+        "warning": 0,
+        "prewarning": category_counts.get(1, 0)
+    }
+    
+    # 返回JSON响应
+    return JsonResponse({"data": result})
 
 '''
 话题详情页面接口
