@@ -11,6 +11,7 @@ export default {
         titleText: { type: String, default: '' },
         valueData: { type: Array, required: true },
         color: { type: Array, default: [] },
+        flag: { type: Boolean, required: true }
     },
     data() {
         return {
@@ -86,8 +87,8 @@ export default {
         }
     },
     watch: {
-        valueData(newVal) {
-            this.chartInstance.setOption(this.option);
+        flag(newVal) {
+            this.updateChart();
         }
     }
 }

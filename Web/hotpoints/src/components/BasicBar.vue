@@ -92,6 +92,7 @@ export default {
             this.chartInstance = echarts.init(this.$refs['basicBar']);
         },
         updateChart() {
+            this.option.series = [];
             for (var i = 0; i < this.$props.barNum; i++) {
                 var obj = {
                     name: this.$props.barName[i],
@@ -105,7 +106,7 @@ export default {
     },
     watch: {
         flag(newVal) {
-            this.chartInstance.setOption(this.option);
+            this.updateChart();
         }
     }
 }

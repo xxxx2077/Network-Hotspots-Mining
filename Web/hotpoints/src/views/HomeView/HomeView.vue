@@ -84,7 +84,7 @@ import BasicBar from '@/components/BasicBar.vue';
 import SmoothLine from '@/components/SmoothLine.vue';
 import Ring from '@/components/Ring.vue';
 import Carousel from '@/components/Carousel.vue';
-import { getHotPointList, getSpeedList } from '@/api/panel';
+import { getHotPointList, getSpeedList, getClassHotVal } from '@/api/panel';
 
 export default {
   name: 'HomeView',
@@ -113,13 +113,8 @@ export default {
         { name: '集市', value: 13 },
         { name: '贴吧', value: 9 },
       ],
-      weekHotPointX: ['4月28日', '4月29日', '4月30日', '5月1日', '5月2日', '5月3日', '5月4日'],
-      weekHotPointData: [
-        [120, 130, 125, 140, 250, 240, 230],
-        [130, 124, 138, 119, 210, 202, 176],
-        [106, 158, 148, 160, 207, 176, 194],
-        [150, 144, 135, 142, 167, 175, 214]
-      ],
+      weekHotPointX: [],
+      weekHotPointData: [],
       weekHotPointFlag: false,
       weekEntryX: ['4月二周', '4月三周', '4月四周', '4月五周', '5月一周'],
       weekEntryData: [
@@ -179,6 +174,28 @@ export default {
           this.hotpointSpeed.push(arr);
         }
         this.hotpointSpeedFlag = !this.hotpointSpeedFlag;
+      }
+    }).catch((err) => {
+      console.log(err);
+    })
+
+    // 事件类别热度
+    getClassHotVal().then((res) => {
+      if (res.status == 200) {
+        const arr_1 = [], arr_2 = [], arr_3 = [], arr_4 = [];
+        res.data.data.forEach(obj => {
+          arr_1.push(obj["1"]);
+          arr_2.push(obj["2"]);
+          arr_3.push(obj["3"]);
+          arr_4.push(obj["4"]);
+          this.weekHotPointX.push(obj.date);
+        })
+        this.weekHotPointData.push(arr_1);
+        this.weekHotPointData.push(arr_2);
+        this.weekHotPointData.push(arr_3);
+        this.weekHotPointData.push(arr_4);
+        console.log(this.weekHotPointData);
+        this.weekHotPointFlag = !this.weekHotPointFlag;
       }
     }).catch((err) => {
       console.log(err);
