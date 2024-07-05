@@ -222,7 +222,7 @@ def get_topic_details(request):
 @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
 def get_topic_5days(request):
     try:
-        topic_id = int(request.GET.get('id', ''))
+        topic_id = int(request.GET.get('topicID', ''))
     except ValueError:
         # 返回400 Bad Request响应
         return JsonResponse({'error': 'Invalid id format'}, status=400)
