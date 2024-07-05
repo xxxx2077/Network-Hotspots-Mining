@@ -18,7 +18,7 @@ const routes = [
       name: 'Developing',
       component: () => import('@/components/Developing')
     }, {
-      path: '/menu/topic',
+      path: '/menu/topic/:id',
       name: 'Topic',
       component: () => import('@/views/Topic/index')
     }]

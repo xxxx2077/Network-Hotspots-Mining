@@ -1,4 +1,5 @@
 from django.db.models import F, OuterRef, Subquery, Sum
+from django.db.models.functions import TruncDate
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from app.controller.single_pass import launch_single_pass, get_data
@@ -66,7 +67,6 @@ def LLM(request):
     return HttpResponse('text_cluster_catorizing done!')
 
 
-
 '''
 主页接口
 '''
@@ -89,10 +89,11 @@ def get_hotlist(request):
             } for cls in class_querySet
         ]
     }
-    
+
     if len(class_querySet) == 10:
         # 尝试获取更多热度大于x值的记录
-        additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(pk__in=[cls.pk for cls in class_querySet])
+        additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(
+            pk__in=[cls.pk for cls in class_querySet])
         for cls in additional_querySet:
             response_data["data"].append({
                 "id": cls.class_id,
@@ -100,8 +101,9 @@ def get_hotlist(request):
                 "topic": cls.class_title,
                 "value": cls.hot_value
             })
-    
+
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+
 
 # 获取热度上升榜
 @require_http_methods(["GET"])
@@ -120,10 +122,11 @@ def get_speedlist(request):
             } for cls in class_querySet
         ]
     }
-    
+
     if len(class_querySet) == 10:
         # 尝试获取更多热度大于x值的记录
-        additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(pk__in=[cls.pk for cls in class_querySet])
+        additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(
+            pk__in=[cls.pk for cls in class_querySet])
         for cls in additional_querySet:
             response_data["data"].append({
                 "id": cls.class_id,
@@ -131,9 +134,8 @@ def get_speedlist(request):
                 "topic": cls.class_title,
                 "value": cls.hot_value_perday
             })
-    
-    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 @require_http_methods(["GET"])
 def get_weekly_event_hotval(request):
@@ -203,6 +205,7 @@ def get_weekly_event_hotval(request):
 话题详情页面接口
 '''
 
+
 # 获取话题详情
 @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
 def get_topic_details(request):
@@ -223,7 +226,7 @@ def get_topic_details(request):
             topic_latest_viewnum = Post.objects.filter(
                 class_id=topic_id
             ).annotate(
-                latest_views = Subquery(latest_viewnum),
+                latest_views=Subquery(latest_viewnum),
             ).values('latest_views')
 
             # 话题总访问量
@@ -281,36 +284,44 @@ def get_topic_details(request):
 
 
 # 获取话题近5日浏览量
-# @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
-# def get_topic(request):
-#     try:
-#         topic_id = int(request.GET.get('id', ''))
-#     except ValueError:
-#         # 返回400 Bad Request响应
-#         return JsonResponse({'error': 'Invalid id format'}, status=400)
-#     if topic_id:
-#         try:
-#             class_query_set = Class.objects.all().values(
-#                 'data',
-#                 'visit',
-#             )
-#             class_list = [
-#                 {
-#                     'name': item['name'],
-#                     'visit': item['visit']
-#                 }
-#                 for item in class_query_set
-#             ]
-#             response_data = {
-#                 "data": class_list,
-#             }
-#             return JsonResponse(data, safe=False)
-#         except Exception as e:
-#             # 返回错误
-#             return JsonResponse({'error': e})
-#     else:
-#         # 返回400 Bad Request响应
-#         return JsonResponse({'error': 'Missing topicID'}, status=400)
+@require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
+def get_topic_5days(request):
+    try:
+        topic_id = int(request.GET.get('topicID', ''))
+    except ValueError:
+        # 返回400 Bad Request响应
+        return JsonResponse({'error': 'Invalid id format'}, status=400)
+    if topic_id:
+        try:
+            # post 索引
+            post_ids = Post.objects.filter(class_id=topic_id).values_list('id', flat=True)
+
+            # 根据日期排序的 topic 每日访问量
+            topic_date_views = PopRecord.objects.filter(
+                pid__in=post_ids  # 使用 __in 查找与 post ids 匹配的记录
+            ).annotate(
+                date=TruncDate('recordtime')
+            ).values(
+                'date'
+            ).annotate(
+                total_views=Sum('viewnum')
+            ).order_by('date')  # 根据日期排序
+
+            data_views_list = [
+                {'date': record['date'].strftime('%m-%d'),
+                 'visit': record['total_views']
+                 } for record in topic_date_views]
+
+            response_data = {
+                'data': data_views_list
+            }
+            return JsonResponse(response_data, safe=False)
+        except Exception as e:
+            # 返回错误
+            return JsonResponse({'error': e})
+    else:
+        # 返回400 Bad Request响应
+        return JsonResponse({'error': 'Missing topicID'}, status=400)
 
 
 # 获取话题内帖子热度榜单

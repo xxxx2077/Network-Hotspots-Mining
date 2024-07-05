@@ -33,5 +33,6 @@ urlpatterns = [
 
     # 话题详细页
     path('topic/details', views.get_topic_details),
+    path('topic/5days', views.get_topic_5days),
     path('topic/postlist', views.get_topic_postlist)
 ]

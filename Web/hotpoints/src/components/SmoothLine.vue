@@ -76,12 +76,24 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        // 窗口大小改变更新图表
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
     },
     methods: {
         initChart() {
             this.chartInstance = echarts.init(this.$refs['SmoothLine']);
         },
         updateChart() {
+            this.chartInstance.setOption(this.option);
+        }
+    },
+    watch: {
+        xData(newVal) {
+            this.chartInstance.setOption(this.option);
+        },
+        valueData(newVal) {
             this.chartInstance.setOption(this.option);
         }
     }
