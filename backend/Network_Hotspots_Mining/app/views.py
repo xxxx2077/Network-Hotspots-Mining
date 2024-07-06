@@ -13,7 +13,8 @@ import datetime
 import pandas as pd
 import os
 import json
-
+from django.utils import timezone
+from datetime import timedelta
 from django.views.decorators.http import require_http_methods
 
 
@@ -137,6 +138,8 @@ def get_speedlist(request):
 
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
+
+#首页接口3
 @require_http_methods(["GET"])
 def get_weekly_event_hotval(request):
     
@@ -225,6 +228,8 @@ def get_weekly_event_hotval(request):
     return JsonResponse({"data": data})
 
 
+
+#首页接口4
 @require_http_methods(["GET"])
 def get_weekly_event_counts(request):
     
@@ -294,6 +299,114 @@ def get_weekly_event_counts(request):
     
     # 返回JSON响应
     return JsonResponse({"data": result})
+
+
+#首页接口5
+@require_http_methods(["GET"])
+def get_weekly_viewnum_stats(request):
+    # 获取当前时间和5周前的时间
+    now = datetime.date.today()
+    start_date = now - timedelta(weeks=5)
+
+    # 从Post表中获取最近5周的帖子记录，并转换为DataFrame
+    posts = Post.objects.filter(time__gte=start_date, correlation__gt=0.75).values()
+    posts_df = pd.DataFrame(posts)
+
+    if posts_df.empty:
+        return JsonResponse({"data": []})
+
+    # 获取PopRecord表中的最新记录，并转换为DataFrame
+    poprecords = PopRecord.objects.filter(pid__in=posts_df['id']).values()
+    poprecords_df = pd.DataFrame(poprecords)
+
+    if poprecords_df.empty:
+        return JsonResponse({"data": []})
+
+    # 只保留每个pid最新的记录
+    poprecords_df = poprecords_df.sort_values('recordtime').drop_duplicates('pid', keep='last')
+
+    # 将PopRecord数据合并到Post数据
+    merged_df = posts_df.merge(poprecords_df, left_on='id', right_on='pid')
+
+    # 只保留hotval大于50的记录
+    merged_df = merged_df[merged_df['hotval'] > 50]
+
+    # 将viewnum置零的无效记录
+    merged_df.loc[merged_df['hotval'] <= 30, 'viewnum'] = 0
+
+    # 按时间周和sentiments_negative分类统计viewnum
+    merged_df['week'] = merged_df['time'].dt.strftime('%Y-%U')
+    negative_df = merged_df[merged_df['sentiment_negative'] < -20].groupby('week')['viewnum'].sum().reset_index()
+    hotspot_df = merged_df[merged_df['sentiment_negative'] >= -20].groupby('week')['viewnum'].sum().reset_index()
+
+    # 构建API返回数据
+    now_date = datetime.date.today()
+    data = []
+    for i in range(5):
+        week_start = now_date - timedelta(weeks=i)
+        week_label = week_start.strftime('%m月第%U周')
+        week_key = week_start.strftime('%Y-%U')
+
+        negative_viewnum = negative_df.loc[negative_df['week'] == week_key, 'viewnum'].sum()
+        hotspot_viewnum = hotspot_df.loc[hotspot_df['week'] == week_key, 'viewnum'].sum()
+
+        data.append({
+            "week": week_label,
+            "negative": int(negative_viewnum),
+            "hotspot": int(hotspot_viewnum)
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+@require_http_methods(["GET"])
+def get_monthly_viewnum_stats(request):
+    # 获取当前时间和6个月前的时间
+    now = datetime.date.today()
+    start_date = now - timedelta(days=12*30)
+
+    # 从Post表中获取最近6个月的帖子记录，并转换为DataFrame
+    posts = Post.objects.filter(time__gte=start_date, correlation__gt=0.75).values()
+    posts_df = pd.DataFrame(posts)
+
+    if posts_df.empty:
+        return JsonResponse({})
+
+    # 获取PopRecord表中的最新记录，并转换为DataFrame
+    poprecords = PopRecord.objects.filter(pid__in=posts_df['id']).values()
+    poprecords_df = pd.DataFrame(poprecords)
+
+    if poprecords_df.empty:
+        return JsonResponse({"data": []})
+
+    # 只保留每个pid最新的记录
+    poprecords_df = poprecords_df.sort_values('recordtime').drop_duplicates('pid', keep='last')
+
+    # 将PopRecord数据合并到Post数据
+    merged_df = posts_df.merge(poprecords_df, left_on='id', right_on='pid')
+
+    # 只保留hotval大于50的记录
+    merged_df = merged_df[merged_df['hotval'] > 50]
+
+    # 将viewnum置零的无效记录
+    merged_df.loc[merged_df['hotval'] <= 30, 'viewnum'] = 0
+
+    # 按月份统计viewnum
+    merged_df['month'] = merged_df['time'].dt.strftime('%Y-%m')
+    monthly_viewnum = merged_df.groupby('month')['viewnum'].sum().reset_index()
+
+    # 构建API返回数据
+    data = []
+    for i in range(12):
+        month_start = (now - timedelta(days=i*30)).strftime('%Y-%m')
+        month_label = (now - timedelta(days=i*30)).strftime('%m月')
+        viewnum = monthly_viewnum.loc[monthly_viewnum['month'] == month_start, 'viewnum'].sum()
+        data.append({
+            "month": month_label,
+            "value": int(viewnum) if not monthly_viewnum.loc[monthly_viewnum['month'] == month_start].empty else 0
+        })
+
+    return JsonResponse(data, safe=False)
 
 '''
 话题详情页面接口
