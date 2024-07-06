@@ -38,5 +38,6 @@ urlpatterns = [
     path('topic/details', views.get_topic_details),
     path('topic/5days', views.get_topic_5days),
     path('topic/postlist', views.get_topic_postlist),
-    path('topic/comment', views.get_topic_comments_stats)
+    path('topic/comment', views.get_topic_comments_stats),
+    path('topic/relation', views.get_topic_relation)
 ]

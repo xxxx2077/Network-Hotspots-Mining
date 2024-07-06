@@ -184,8 +184,6 @@ def LLM_class(task="2"):
 
     # 遍历每个类别的聚类结果
     for it in content_list:
-        if int(it) != 162:
-            continue
         try:
             print(it)
             # 转换 json 字符串
@@ -251,7 +249,7 @@ def LLM_class(task="2"):
                     class_ = Class(
                         class_id=int(it) + 1,
                         class_title=generated_json.get('class_title'),
-                        Key_points=generated_json.get('Key_points'),
+                        key_points=generated_json.get('Key_points'),
                         summary=generated_json.get('summary'),
                         hot_value=hot_value_total,
                         hot_value_perday=hot_value_perday_total
@@ -279,3 +277,55 @@ def LLM_class(task="2"):
         # 线程错误
         except Exception as e:
             print(f"Exception occurred for post_id={it}: {e}")
+
+
+def LLM_relation(post1, post2, task="3"):
+    try:
+        # 访问数据库，获取帖子和评论
+        summary1 = Summary.objects.get(summary_id=post1)
+        summary2 = Summary.objects.get(summary_id=post2)
+        content1 = summary1.summary + summary1.consequences
+        content2 = summary2.summary + summary2.consequences
+
+        # 拼接事件
+        content = '事件1：' + content1 + '。' + '事件2：' + content2 + '。'
+        # 去掉空格
+        content = ''.join(content.split())
+
+        reset_num = 0  # 限制错误重试次数
+        while reset_num < 5:
+            # 调用 API
+            generated_text = Api(content, task)
+
+            # 成功：没有关系
+            if ("没有关系" in generated_text) or ("无直接关系" in generated_text):
+                return post1, "无直接关系", post2
+
+            if "事件" in generated_text:
+                # 拆分关系描述
+                event1 = generated_text.split("是")[0].strip()
+                event2_and_relation = generated_text.split("是")[1].strip()
+                # 获取事件2和事件1及其关系描述
+                event2 = event2_and_relation.split("的")[0].strip()
+                relation = event2_and_relation.split("的")[1].strip().replace('。', '')
+
+            else:
+                print('error1:')
+                print(generated_text)
+                reset_num += 1
+                continue
+
+            # 成功：返回
+            print('success:')
+            if event1 == "事件1" and event2 == "事件2":
+                return post1, relation, post2
+            else:
+                return post2, relation, post1
+
+        # 失败
+        if reset_num >= 5:
+            return post1, '无', post2
+
+    # 线程错误
+    except Exception as e:
+        print(f"Exception occurred for: {e}")

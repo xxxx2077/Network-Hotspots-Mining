@@ -1,10 +1,12 @@
+from itertools import combinations
+
 from django.db.models import F, OuterRef, Subquery, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from app.controller.single_pass import launch_single_pass, get_data
-from app.controller.LLM import LLM_summary, LLM_class
-from app.models import Comments, Post, Class, PopRecord
+from app.controller.LLM import LLM_summary, LLM_class, LLM_relation
+from app.models import Comments, Post, Class, PopRecord, Summary
 from app.util.util import querySet_to_list
 from app.misc.data_processing import preprocess_data, mark_used, days_calculating
 from app.misc.clear_db import clear_db_class, clear_db_summary
@@ -63,7 +65,7 @@ def LLM_summary_db(request):
 
 
 def LLM(request):
-    launch_single_pass()
+    # launch_single_pass()
     LLM_class()
 
     return HttpResponse('text_cluster_catorizing done!')
@@ -511,7 +513,7 @@ def get_topic_details(request):
         # 返回400 Bad Request响应
         return JsonResponse({'error': 'Missing topicID'}, status=400)
     
-#话题页接口2  
+# 话题页接口2
 @require_http_methods(["GET"])
 def get_topic_comments_stats(request):
     # 获取请求参数中的id
@@ -572,40 +574,6 @@ def get_topic_comments_stats(request):
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 
-# 获取评论舆论等级
-# @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
-# def get_topic(request):
-#     try:
-#         topic_id = int(request.GET.get('id', ''))
-#     except ValueError:
-#         # 返回400 Bad Request响应
-#         return JsonResponse({'error': 'Invalid id format'}, status=400)
-#     if topic_id:
-#         try:
-#             class_query_set = Class.objects.all().values(
-#                 'data',
-#                 'visit',
-#             )
-#             class_list = [
-#                 {
-#                     'name': item['name'],
-#                     'visit': item['visit']
-#                 }
-#                 for item in class_query_set
-#             ]
-#             response_data = {
-#                 "data": class_list,
-#             }
-#             return JsonResponse(data, safe=False)
-#         except Exception as e:
-#             # 返回错误
-#             return JsonResponse({'error': e})
-#     else:
-#         # 返回400 Bad Request响应
-#         return JsonResponse({'error': 'Missing topicID'}, status=400)
-
-
-# 获取话题近5日浏览量
 @require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
 def get_topic_5days(request):
     try:
@@ -681,6 +649,60 @@ def get_topic_postlist(request):
             print(post_list)
             response_data = {
                 "data": post_list,
+            }
+            return JsonResponse(response_data)
+        except Exception as e:
+            # 返回错误
+            return JsonResponse({'error': e})
+    else:
+        # 返回400 Bad Request响应
+        return JsonResponse({'error': 'Missing topicID'}, status=400)
+
+
+@require_http_methods(["GET"])  # 限制只能使用 GET 方法访问这个视图
+def get_topic_relation(request):
+    try:
+        topic_id = int(request.GET.get('topicID', ''))
+    except ValueError:
+        # 返回400 Bad Request响应
+        return JsonResponse({'error': 'Invalid id format'}, status=400)
+    if topic_id:
+        try:
+            # 热度
+            hot_value = PopRecord.objects.filter(
+                pid=OuterRef('id')
+            ).values('hotval')[:1]
+
+            # 该 topic 的所有帖子
+            post_ids = Post.objects.filter(class_id=topic_id).annotate(
+                hot_value=Subquery(hot_value)
+            ).values(
+                'id',
+                'hot_value'
+            ).order_by('-hot_value')[:4]
+
+            # 生成两两组合
+            post_pairs = list(combinations(post_ids, 2))
+            print(post_pairs)
+
+            node = []
+            line = []
+            # 遍历
+            for pair in post_pairs:
+                post1 = int(pair[0]['id'])
+                post2 = int(pair[1]['id'])
+                post_front, relation, post_back = LLM_relation(post1, post2, task="3")
+
+                # 保存
+                response_data = {"from": post_front, "to": post_back, "text": relation}
+                line.append(response_data)
+                print(Post.objects.get(id=post_front).title)
+                print(relation)
+                print(Post.objects.get(id=post_back).title)
+                print('------')
+
+            response_data = {
+                "line": line,
             }
             return JsonResponse(response_data)
         except Exception as e:
