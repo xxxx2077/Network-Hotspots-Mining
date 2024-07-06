@@ -205,8 +205,6 @@ export default {
         this.weekAddData2.push({ name: '舆情预警', value: res.data.data.prewarning });
         this.weekAddData2.push({ name: '系统警告', value: res.data.data.warning });
         this.weekAddFlag2 = !this.weekAddFlag2;
-        console.log(this.weekAddFlag1);
-        console.log(this.weekAddFlag2);
       }
     }).catch((err) => {
       console.log(err);
@@ -215,7 +213,6 @@ export default {
     // 获取月统计
     getMonthVisit().then((res) => {
       if (res.status == 200) {
-        console.log(res)
         res.data.reverse().forEach(obj => {
           this.monthEntryX.push(obj.month);
           this.monthEntryData.push(obj.value);

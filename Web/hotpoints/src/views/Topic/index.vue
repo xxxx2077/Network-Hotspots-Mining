@@ -38,7 +38,8 @@
             <el-col :span="6" style="height: 100%;">
                 <Card title="舆论情感分析">
                     <div style="width: 100%; height: 100%; display: flex;">
-                        <Ring :valueData="ringData" :color="['#009DFF', '#22E4FF', '#4985F0', '#04E38A']"></Ring>
+                        <Ring :valueData="commentData" :color="['#009DFF', '#22E4FF', '#4985F0', '#04E38A']"
+                            :flag="commentFlag"></Ring>
                     </div>
                 </Card>
             </el-col>
@@ -76,7 +77,7 @@ import Nightingale from '@/components/Nightingale.vue';
 import SmoothLine from '@/components/SmoothLine.vue';
 import Carousel from '@/components/Carousel.vue';
 import Relation from '@/components/Relation.vue';
-import { getTopicDetail, getTopicVisits, getPostList } from '@/api/topic';
+import { getTopicDetail, getTopicVisits, getPostList, getComment, getMap } from '@/api/topic';
 
 export default {
     name: 'Topic',
@@ -98,12 +99,8 @@ export default {
                 warnVal: 0,
                 visits: 0,
             },
-            ringData: [
-                { name: '一类', value: 20 },
-                { name: '二类', value: 16 },
-                { name: '三类', value: 5 },
-                { name: '四类', value: 9 },
-            ],
+            commentData: [],
+            commentFlag: false,
             nightinggaleData: [
                 { name: '集市', value: 40 },
                 { name: '小红书', value: 30 },
@@ -149,6 +146,16 @@ export default {
                     this.postList.push(arr);
                 }
                 this.postListFlag = !this.postListFlag;
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
+
+        // 获取评论分类
+        getComment(this.topicID).then((res) => {
+            if (res.status == 200) {
+                this.commentData = res.data.data;
+                this.commentFlag = !this.commentFlag;
             }
         }).catch((err) => {
             console.log(err);

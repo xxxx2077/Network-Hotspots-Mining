@@ -515,7 +515,7 @@ def get_topic_details(request):
 @require_http_methods(["GET"])
 def get_topic_comments_stats(request):
     # 获取请求参数中的id
-    topic_id = request.GET.get('id', None)
+    topic_id = request.GET.get('topicID', None)
     
     # 检查id是否有效
     try:
@@ -562,10 +562,10 @@ def get_topic_comments_stats(request):
     # 构建返回的数据格式
     response_data = {
         "data": [
-            {"name": "一类", "value": category_counts.get(1, 0)},
-            {"name": "二类", "value": category_counts.get(2, 0)},
-            {"name": "三类", "value": category_counts.get(3, 0)},
-            {"name": "四类", "value": category_counts.get(4, 0)},
+            {"name": "负面", "value": category_counts.get(1, 0)},
+            {"name": "较负面", "value": category_counts.get(2, 0)},
+            {"name": "普通", "value": category_counts.get(3, 0)},
+            {"name": "正常", "value": category_counts.get(4, 0)},
         ]
     }
     
