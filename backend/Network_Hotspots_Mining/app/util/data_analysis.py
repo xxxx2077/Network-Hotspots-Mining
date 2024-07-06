@@ -136,7 +136,7 @@ def plot_sentiment_distribution(connector):
 
     try:
         # 查询 sentiment 字段数据
-        query = "SELECT sentiment FROM comments"
+        query = "SELECT sentiment FROM comments WHERE time BETWEEN '2024-06-20' AND '2024-07-5';"
         sentiments = connector.execute_query(query)
         
         # 将数据转换为 pandas DataFrame
@@ -146,7 +146,7 @@ def plot_sentiment_distribution(connector):
         plt.figure()
         
         # 使用 pandas 的 hist 方法绘制直方图，设置区间范围为 [-2, 2]，并分成 10 个区段
-        df['sentiment'].hist(bins=50, range=(-2, 2), edgecolor='black', density = True)
+        df['sentiment'].hist(bins=80, range=(-1, 1), edgecolor='black', density = True)
         
         plt.title('Sentiment Distribution')
         plt.xlabel('Sentiment')
@@ -217,10 +217,12 @@ def main():
         password="SSE_user1test",
         database="sse_training"
     )
-    # db_connector.connect()
+    db_connector.connect()
+    plot_sentiment_distribution(db_connector)
+    db_connector.disconnect()
     # # df = get_max_hotval_data(db_connector)
     # plot_sentiment_negative_distribution(db_connector)
-    # db_connector.disconnect()
+    
     
     # visualize_highest_data(df)
     

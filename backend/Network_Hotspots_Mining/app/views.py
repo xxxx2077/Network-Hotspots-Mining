@@ -16,6 +16,7 @@ import json
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse, HttpResponseBadRequest
 
 
 # Create your views here.
@@ -71,7 +72,54 @@ def LLM(request):
 '''
 主页接口
 '''
-
+#判断话题类型函数
+def get_topic_type(topic_id):
+    # 判断class表中是否有该话题
+    if not Class.objects.filter(class_id=topic_id).exists():
+        return "未分析"
+    
+    # 获取对应class_id的所有post记录
+    posts = Post.objects.filter(class_id=topic_id).values('correlation', 'sentiment_negative')
+    
+    # 转换为DataFrame
+    posts_df = pd.DataFrame(posts)
+    
+    if posts_df.empty:
+        return 0
+    
+    # 根据条件分类
+    def classify(row):
+        if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
+            return 1
+        elif row['correlation'] <= 0.75 and row['sentiment_negative'] < -15:
+            return 2
+        elif row['correlation'] <= 0.7 and row['sentiment_negative'] >= -15:
+            return 3
+        else:
+            return 4
+    
+    posts_df['category'] = posts_df.apply(classify, axis=1)
+    
+    # 统计每个分类的数量
+    category_counts = posts_df['category'].value_counts().to_dict()
+    
+    # 判断是否存在舆论预警事件
+    if category_counts.get(1, 0) > 0:
+        return "舆论预警"
+    
+    # 计算其余三种事件的数量并返回最多的类型
+    two_count = category_counts.get(2, 0)
+    three_count = category_counts.get(3, 0)
+    four_count = category_counts.get(4, 0)
+    
+    max_count = max(two_count, three_count, four_count)
+    
+    if max_count == four_count:
+        return "校内热点"
+    elif max_count == three_count:
+        return "校外热点"
+    else:
+        return "负面事件"
 
 # 获取热榜
 @require_http_methods(["GET"])
@@ -81,24 +129,27 @@ def get_hotlist(request):
 
     # 构建返回的数据
     response_data = {
-        "data": [
-            {
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value
-            } for cls in class_querySet
-        ]
+        "data": []
     }
+
+    for cls in class_querySet:
+        class_type = get_topic_type(cls.class_id)
+        response_data["data"].append({
+            "id": cls.class_id,
+            "class": class_type,
+            "topic": cls.class_title,
+            "value": cls.hot_value
+        })
 
     if len(class_querySet) == 10:
         # 尝试获取更多热度大于x值的记录
         additional_querySet = Class.objects.filter(hot_value__gte=200).exclude(
             pk__in=[cls.pk for cls in class_querySet])
         for cls in additional_querySet:
+            class_type = get_topic_type(cls.class_id)
             response_data["data"].append({
                 "id": cls.class_id,
-                "class": "负面事件",
+                "class": class_type,
                 "topic": cls.class_title,
                 "value": cls.hot_value
             })
@@ -114,27 +165,31 @@ def get_speedlist(request):
 
     # 构建返回的数据
     response_data = {
-        "data": [
-            {
-                "id": cls.class_id,
-                "class": "负面事件",
-                "topic": cls.class_title,
-                "value": cls.hot_value_perday
-            } for cls in class_querySet
-        ]
+        "data": []
     }
+    
+    for cls in class_querySet:
+        class_type = get_topic_type(cls.class_id)
+        response_data["data"].append({
+            "id": cls.class_id,
+            "class": class_type,
+            "topic": cls.class_title,
+            "value": cls.hot_value_perday
+        })
 
     if len(class_querySet) == 10:
         # 尝试获取更多热度大于x值的记录
         additional_querySet = Class.objects.filter(hot_value_perday__gte=100).exclude(
             pk__in=[cls.pk for cls in class_querySet])
         for cls in additional_querySet:
+            class_type = get_topic_type(cls.class_id)
             response_data["data"].append({
                 "id": cls.class_id,
-                "class": "负面事件",
+                "class": class_type,
                 "topic": cls.class_title,
                 "value": cls.hot_value_perday
             })
+
 
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
@@ -358,7 +413,7 @@ def get_weekly_viewnum_stats(request):
 
     return JsonResponse(data, safe=False)
 
-
+#首页接口6
 @require_http_methods(["GET"])
 def get_monthly_viewnum_stats(request):
     # 获取当前时间和6个月前的时间
@@ -455,6 +510,66 @@ def get_topic_details(request):
     else:
         # 返回400 Bad Request响应
         return JsonResponse({'error': 'Missing topicID'}, status=400)
+    
+#话题页接口2  
+@require_http_methods(["GET"])
+def get_topic_comments_stats(request):
+    # 获取请求参数中的id
+    topic_id = request.GET.get('id', None)
+    
+    # 检查id是否有效
+    try:
+        topic_id = int(topic_id)
+    except (TypeError, ValueError):
+        return HttpResponseBadRequest("Invalid topic ID format.")
+    
+    # 检查topic_id是否存在于post表的class_id字段中
+    if not Post.objects.filter(class_id=topic_id).exists():
+        return HttpResponseBadRequest("Topic ID does not exist.")
+    
+    # 提取post表中所有class_id符合传入id的记录
+    posts = Post.objects.filter(class_id=topic_id).values('id')
+    
+    # 提取comments表中所有符合条件的数据的sentiment字段
+    post_ids = [post['id'] for post in posts]
+    comments = Comments.objects.filter(pid__in=post_ids).values('sentiment')
+    
+    # 转换为DataFrame
+    comments_df = pd.DataFrame(comments)
+    
+    if comments_df.empty:
+        return JsonResponse({"data": []})
+    
+    # 删除或置零极端的sentiment值
+    comments_df['sentiment'] = comments_df['sentiment'].apply(lambda x: 0 if x > 0.9 or x < -0.95 else x)
+    
+    # 根据分类规则对sentiment数据进行分类
+    def classify_sentiment(sentiment):
+        if sentiment < -0.7:
+            return 1
+        elif -0.7 <= sentiment < -0.2:
+            return 2
+        elif -0.2 <= sentiment < 0.25:
+            return 3
+        else:
+            return 4
+    
+    comments_df['category'] = comments_df['sentiment'].apply(classify_sentiment)
+    
+    # 统计各类别的数量
+    category_counts = comments_df['category'].value_counts().sort_index().to_dict()
+    
+    # 构建返回的数据格式
+    response_data = {
+        "data": [
+            {"name": "一类", "value": category_counts.get(1, 0)},
+            {"name": "二类", "value": category_counts.get(2, 0)},
+            {"name": "三类", "value": category_counts.get(3, 0)},
+            {"name": "四类", "value": category_counts.get(4, 0)},
+        ]
+    }
+    
+    return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 
 # 获取评论舆论等级
