@@ -18,7 +18,7 @@
       </el-col>
       <el-col :span="10" style="height: 100%;">
         <dv-border-box-12 style="height: 65%;">
-          <BasicBar titleText="本周热度数据统计" :barNum="4" :barName="['负面事件', '二类', '三类', '四类']" :xData="weekHotPointX"
+          <BasicBar titleText="本周热度数据统计" :barNum="4" :barName="['舆论预警', '负面事件', '校外热点', '校内热点']" :xData="weekHotPointX"
             :barData="weekHotPointData" :flag="weekHotPointFlag"></BasicBar>
         </dv-border-box-12>
         <dv-border-box-12 style="height: 35%;">
@@ -229,7 +229,7 @@ export default {
 </script>
 
 
-<style>
+<style scoped>
 #dv-full-screen-container {
   width: 100%;
   height: 100%;
@@ -244,17 +244,21 @@ export default {
   font-weight: bold;
 }
 
-#carousel .border-box-content {
+:deep(#carousel .border-box-content) {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-#carousel span {
+:deep(#carousel span) {
   padding-top: 1.5%;
   font-size: 18px;
   font-weight: bolder;
   font-family: sans-serif;
   color: white;
+}
+
+:deep(.row-item:hover) {
+  cursor: pointer;
 }
 </style>
