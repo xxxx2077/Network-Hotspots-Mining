@@ -85,7 +85,7 @@ import BasicBar from '@/components/BasicBar.vue';
 import SmoothLine from '@/components/SmoothLine.vue';
 import Ring from '@/components/Ring.vue';
 import Carousel from '@/components/Carousel.vue';
-import { getHotPointList, getSpeedList, getClassHotVal, getWeekAdded } from '@/api/panel';
+import { getHotPointList, getSpeedList, getClassHotVal, getWeekAdded, getMonthVisit, getWeekVisit } from '@/api/panel';
 
 export default {
   name: 'HomeView',
@@ -117,14 +117,11 @@ export default {
       weekHotPointX: [],
       weekHotPointData: [],
       weekHotPointFlag: false,
-      weekEntryX: ['4月二周', '4月三周', '4月四周', '4月五周', '5月一周'],
-      weekEntryData: [
-        [60, 65, 61, 32, 72],
-        [43, 37, 57, 35, 52]
-      ],
+      weekEntryX: [],
+      weekEntryData: [],
       weekEntryFlag: false,
-      monthEntryX: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-      monthEntryData: [64, 71, 84, 51, 54, 62, 59, 78, 94, 84, 74, 68],
+      monthEntryX: [],
+      monthEntryData: [],
       weekAddData1: [],
       weekAddFlag1: false,
       weekAddData2: [],
@@ -210,6 +207,36 @@ export default {
         this.weekAddFlag2 = !this.weekAddFlag2;
         console.log(this.weekAddFlag1);
         console.log(this.weekAddFlag2);
+      }
+    }).catch((err) => {
+      console.log(err);
+    })
+
+    // 获取月统计
+    getMonthVisit().then((res) => {
+      if (res.status == 200) {
+        console.log(res)
+        res.data.reverse().forEach(obj => {
+          this.monthEntryX.push(obj.month);
+          this.monthEntryData.push(obj.value);
+        })
+      }
+    }).catch((err) => {
+      console.log(err);
+    })
+
+    // 获取周统计
+    getWeekVisit().then((res) => {
+      if (res.status == 200) {
+        const arr_1 = [], arr_2 = [];
+        res.data.reverse().forEach(obj => {
+          arr_1.push(obj.negative);
+          arr_2.push(obj.hotspot)
+          this.weekEntryX.push(obj.week);
+        })
+        this.weekEntryData.push(arr_1);
+        this.weekEntryData.push(arr_2);
+        this.weekEntryFlag = !this.weekEntryFlag;
       }
     }).catch((err) => {
       console.log(err);
