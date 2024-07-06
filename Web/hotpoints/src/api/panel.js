@@ -15,3 +15,19 @@ export function getSpeedList() {
         method: 'GET'
     })
 }
+
+// 事件类型热度
+export function getClassHotVal() {
+    return request({
+        url: '/classHotValue',
+        method: 'GET'
+    })
+}
+
+// 本周新增统计
+export function getWeekAdded() {
+    return request({
+        url: '/weekAdded',
+        method: 'GET'
+    })
+}

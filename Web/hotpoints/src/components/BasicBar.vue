@@ -13,6 +13,7 @@ export default {
         barNum: { type: Number, required: true },
         barName: { type: Array, required: true },
         barData: { type: Array, required: true },
+        flag: { type: Boolean, required: true },
     },
     data() {
         return {
@@ -78,12 +79,20 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
+    },
+    destroyed() {
+        this.chartInstance.dispose();
+        window.removeEventListener("resize", this.chartInstance);
     },
     methods: {
         initChart() {
             this.chartInstance = echarts.init(this.$refs['basicBar']);
         },
         updateChart() {
+            this.option.series = [];
             for (var i = 0; i < this.$props.barNum; i++) {
                 var obj = {
                     name: this.$props.barName[i],
@@ -93,6 +102,11 @@ export default {
                 this.option.series.push(obj);
             }
             this.chartInstance.setOption(this.option);
+        }
+    },
+    watch: {
+        flag(newVal) {
+            this.updateChart();
         }
     }
 }

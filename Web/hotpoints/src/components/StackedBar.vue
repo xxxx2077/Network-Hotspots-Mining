@@ -126,6 +126,12 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
+    },
+    destroyed() {
+        this.chartInstance.dispose();
     },
     methods: {
         initChart() {

@@ -11,6 +11,7 @@ export default {
         titleText: { type: String, default: '' },
         valueData: { type: Array, required: true },
         color: { type: Array, default: [] },
+        flag: { type: Boolean, required: true }
     },
     data() {
         return {
@@ -52,7 +53,7 @@ export default {
                                 formatter: '{b}\n{c}',
                             }
                         },
-                        data: this.$props.valueData
+                        data: []
                     }
                 ]
             }
@@ -61,6 +62,14 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        // 窗口大小改变更新图表
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
+    },
+    destroyed() {
+        this.chartInstance.dispose();
+        window.removeEventListener("resize", this.chartInstance);
     },
     methods: {
         initChart() {
@@ -69,12 +78,17 @@ export default {
         updateChart() {
             if (this.$props.color.length !== 0) {
                 for (var i = 0; i < this.$props.valueData.length; i++) {
-                    var data = this.option.series[0].data.shift();
+                    var data = this.$props.valueData[i];
                     this.$set(data, 'itemStyle', { color: this.$props.color[i] });
                     this.option.series[0].data.push(data);
                 }
             }
             this.chartInstance.setOption(this.option);
+        }
+    },
+    watch: {
+        flag(newVal) {
+            this.updateChart();
         }
     }
 }

@@ -19,18 +19,19 @@
       <el-col :span="10" style="height: 100%;">
         <dv-border-box-12 style="height: 65%;">
           <BasicBar titleText="本周热度数据统计" :barNum="4" :barName="['负面事件', '二类', '三类', '四类']" :xData="weekHotPointX"
-            :barData="weekHotPointData"></BasicBar>
+            :barData="weekHotPointData" :flag="weekHotPointFlag"></BasicBar>
         </dv-border-box-12>
         <dv-border-box-12 style="height: 35%;">
           <el-row style="height: 100%;">
             <el-col :span="12" style="height: 100%;">
               <div style="width: 100%; height: 100%;">
-                <Ring titleText="本周新增" :valueData="weekAddData1" :color="['#05fbff', '#ff2b05']"></Ring>
+                <Ring titleText="本周新增" :valueData="weekAddData1" :color="['#05fbff', '#ff2b05']" :flag="weekAddFlag1">
+                </Ring>
               </div>
             </el-col>
             <el-col :span="12" style="height: 100%;">
               <div style="width: 100%; height: 100%;">
-                <Ring :valueData="weekAddData2" :color="['#ff6905', '#ff2b05']"></Ring>
+                <Ring :valueData="weekAddData2" :color="['#ff6905', '#ff2b05']" :flag="weekAddFlag2"></Ring>
               </div>
             </el-col>
           </el-row>
@@ -57,7 +58,7 @@
       <el-col :span="7" style="height: 100%;">
         <dv-border-box-12>
           <BasicBar titleText="中大词条浏览周统计" :barNum="2" :barName="['负面事件', '热点事件']" :xData="weekEntryX"
-            :barData="weekEntryData">
+            :barData="weekEntryData" :flag="weekEntryFlag">
           </BasicBar>
         </dv-border-box-12>
       </el-col>
@@ -84,7 +85,7 @@ import BasicBar from '@/components/BasicBar.vue';
 import SmoothLine from '@/components/SmoothLine.vue';
 import Ring from '@/components/Ring.vue';
 import Carousel from '@/components/Carousel.vue';
-import { getHotPointList, getSpeedList } from '@/api/panel';
+import { getHotPointList, getSpeedList, getClassHotVal, getWeekAdded } from '@/api/panel';
 
 export default {
   name: 'HomeView',
@@ -113,28 +114,21 @@ export default {
         { name: '集市', value: 13 },
         { name: '贴吧', value: 9 },
       ],
-      weekHotPointX: ['4月28日', '4月29日', '4月30日', '5月1日', '5月2日', '5月3日', '5月4日'],
-      weekHotPointData: [
-        [120, 130, 125, 140, 250, 240, 230],
-        [130, 124, 138, 119, 210, 202, 176],
-        [106, 158, 148, 160, 207, 176, 194],
-        [150, 144, 135, 142, 167, 175, 214]
-      ],
+      weekHotPointX: [],
+      weekHotPointData: [],
+      weekHotPointFlag: false,
       weekEntryX: ['4月二周', '4月三周', '4月四周', '4月五周', '5月一周'],
       weekEntryData: [
         [60, 65, 61, 32, 72],
         [43, 37, 57, 35, 52]
       ],
+      weekEntryFlag: false,
       monthEntryX: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
       monthEntryData: [64, 71, 84, 51, 54, 62, 59, 78, 94, 84, 74, 68],
-      weekAddData1: [
-        { name: '热点事件', value: 12 },
-        { name: '负面事件', value: 3 },
-      ],
-      weekAddData2: [
-        { name: '舆情预警', value: 12 },
-        { name: '系统警告', value: 3 },
-      ],
+      weekAddData1: [],
+      weekAddFlag1: false,
+      weekAddData2: [],
+      weekAddFlag2: false,
       hotpointRawData: [],
       hotpointData: [['', '', '']],
       hotpointDataFlag: false,
@@ -177,6 +171,45 @@ export default {
           this.hotpointSpeed.push(arr);
         }
         this.hotpointSpeedFlag = !this.hotpointSpeedFlag;
+      }
+    }).catch((err) => {
+      console.log(err);
+    })
+
+    // 事件类别热度
+    getClassHotVal().then((res) => {
+      if (res.status == 200) {
+        const arr_1 = [], arr_2 = [], arr_3 = [], arr_4 = [];
+        res.data.data.forEach(obj => {
+          arr_1.push(obj["1"]);
+          arr_2.push(obj["2"]);
+          arr_3.push(obj["3"]);
+          arr_4.push(obj["4"]);
+          this.weekHotPointX.push(obj.date);
+        })
+        this.weekHotPointData.push(arr_1);
+        this.weekHotPointData.push(arr_2);
+        this.weekHotPointData.push(arr_3);
+        this.weekHotPointData.push(arr_4);
+        this.weekHotPointFlag = !this.weekHotPointFlag;
+      }
+    }).catch((err) => {
+      console.log(err);
+    })
+
+    // 获取本周新增
+    getWeekAdded().then((res) => {
+      if (res.status == 200) {
+        this.weekAddData1 = [];
+        this.weekAddData1.push({ name: '热点事件', value: res.data.data.hotspot });
+        this.weekAddData1.push({ name: '负面事件', value: res.data.data.negative });
+        this.weekAddFlag1 = !this.weekAddFlag1;
+        this.weekAddData2 = [];
+        this.weekAddData2.push({ name: '舆情预警', value: res.data.data.prewarning });
+        this.weekAddData2.push({ name: '系统警告', value: res.data.data.warning });
+        this.weekAddFlag2 = !this.weekAddFlag2;
+        console.log(this.weekAddFlag1);
+        console.log(this.weekAddFlag2);
       }
     }).catch((err) => {
       console.log(err);

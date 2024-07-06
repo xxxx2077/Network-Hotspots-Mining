@@ -81,6 +81,10 @@ export default {
             this.chartInstance.resize();
         })
     },
+    destroyed() {
+        this.chartInstance.dispose();
+        window.removeEventListener("resize", this.chartInstance);
+    },
     methods: {
         initChart() {
             this.chartInstance = echarts.init(this.$refs['SmoothLine']);

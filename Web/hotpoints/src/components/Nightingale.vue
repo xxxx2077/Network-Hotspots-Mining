@@ -20,6 +20,13 @@ export default {
     mounted() {
         this.initChart();
         this.updateChart();
+        window.addEventListener("resize", () => {
+            this.chartInstance.resize();
+        })
+    },
+    destroyed() {
+        this.chartInstance.dispose();
+        window.removeEventListener("resize", this.chartInstance);
     },
     methods: {
         initChart() {
@@ -83,6 +90,11 @@ export default {
                     }
                 ]
             }
+            this.chartInstance.setOption(option);
+        }
+    },
+    watch: {
+        valueData(newVal) {
             this.chartInstance.setOption(option);
         }
     }
