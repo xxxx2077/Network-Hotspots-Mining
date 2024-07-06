@@ -31,3 +31,19 @@ export function getWeekAdded() {
         method: 'GET'
     })
 }
+
+// 月统计
+export function getMonthVisit() {
+    return request({
+        url: '/monthVisit',
+        method: 'GET'
+    })
+}
+
+// 周统计
+export function getWeekVisit() {
+    return request({
+        url: '/weekVisit',
+        method: 'GET'
+    })
+}

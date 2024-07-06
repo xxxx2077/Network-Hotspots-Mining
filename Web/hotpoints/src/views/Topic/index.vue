@@ -14,21 +14,21 @@
                     <div style="width: 48%; height: 100%; margin-left: auto; display: flex; align-items: center;">
                         <div class="dataCard"
                             style="background: linear-gradient(to right, #FBC2EB, #A28CD1); margin-left: 2%;">
-                            <span class="detail" style="margin-top: 10%;">实时热度</span>
-                            <span class="detail" style="margin-top: auto;">{{ topic.hotValue }}</span>
-                            <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升10%</span>
+                            <span class="detail" style="margin-top: 20%;">实时热度</span>
+                            <span class="detail" style="margin-top: auto; margin-bottom: 20%;">{{ topic.hotValue }}</span>
+                            <!-- <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升10%</span> -->
                         </div>
                         <div class="dataCard"
                             style="background: linear-gradient(to right, #F2869F, #FCC687); margin-left: auto;">
-                            <span class="detail" style="margin-top: 10%;">风险预警</span>
-                            <span class="detail" style="margin-top: auto;">{{ topic.warnValue }}</span>
-                            <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升0%</span>
+                            <span class="detail" style="margin-top: 20%;">风险预警</span>
+                            <span class="detail" style="margin-top: auto; margin-bottom: 20%;">{{ topic.warnValue }}</span>
+                            <!-- <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升0%</span> -->
                         </div>
                         <div class="dataCard"
                             style="background: linear-gradient(to right, #08BAFC, rgba(5, 251, 255, 0.6)); margin-left: auto; margin-right: 2%;">
-                            <span class="detail" style="margin-top: 10%;">今日访问量</span>
-                            <span class="detail" style="margin-top: auto;">{{ topic.visits }}</span>
-                            <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升10%</span>
+                            <span class="detail" style="margin-top: 20%;">今日访问量</span>
+                            <span class="detail" style="margin-top: auto; margin-bottom: 20%;">{{ topic.visits }}</span>
+                            <!-- <span class="detail" style="margin-top: auto; margin-bottom: 10%;">较昨日上升10%</span> -->
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .dataCard {
     width: 30%;
     height: 80%;

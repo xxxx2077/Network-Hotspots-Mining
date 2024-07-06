@@ -61,7 +61,7 @@ def LLM_summary(post_id, task="1"):
     try:
         # 访问数据库，获取帖子和评论
         post = Post.objects.get(id=post_id)
-        comments = Comments.objects.filter(pid=post_id).order_by('-likeNum').values_list('content', flat=True)
+        comments = Comments.objects.filter(pid=post_id).order_by('-likenum').values_list('content', flat=True)
         title = post.title
         content = post.content
         top_comments = list(comments[:3])  # 取前三个
@@ -142,10 +142,11 @@ def LLM_summary(post_id, task="1"):
                     date=generated_json.get('date'),
                     location=generated_json.get('location'),
                     participants=generated_json.get('participants'),
-                    Key_points=generated_json.get('Key_points'),
+                    key_points=generated_json.get('Key_points'),
                     summary=generated_json.get('summary'),
                     consequences=generated_json.get('consequences'),
-                    comments=generated_json.get('comments')
+                    comments=generated_json.get('comments'),
+                    is_abnormal=False
                 )
                 summary.save()
                 Post.objects.filter(id=post_id).update(is_summaried=True)
