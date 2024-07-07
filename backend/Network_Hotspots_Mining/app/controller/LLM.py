@@ -1,9 +1,12 @@
-from app.models import Post, Comments, Summary, Class
+from itertools import combinations
+
+from app.models import Post, Comments, Summary, Class, PopRecord, Relation
 from datetime import datetime, timezone
 import requests
 import json
 import time
 from django.db import transaction
+from django.db.models import OuterRef, Subquery
 from ratelimit import sleep_and_retry, limits
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -252,7 +255,8 @@ def LLM_class(task="2"):
                         key_points=generated_json.get('Key_points'),
                         summary=generated_json.get('summary'),
                         hot_value=hot_value_total,
-                        hot_value_perday=hot_value_perday_total
+                        hot_value_perday=hot_value_perday_total,
+                        is_relation=False,
                     )
                     class_.save()
                 print('success:')
@@ -263,7 +267,7 @@ def LLM_class(task="2"):
             # 失败
             if reset_num >= 5:
                 with transaction.atomic():
-                    summary = Summary(
+                    class_ = Summary(
                         class_id=int(it) + 1,
                         class_title="None",
                         Key_points="None",
@@ -279,52 +283,102 @@ def LLM_class(task="2"):
             print(f"Exception occurred for post_id={it}: {e}")
 
 
-def LLM_relation(post1, post2, task="3"):
+def LLM_relation(task="3"):
     try:
-        # 访问数据库，获取帖子和评论
-        summary1 = Summary.objects.get(summary_id=post1)
-        summary2 = Summary.objects.get(summary_id=post2)
-        content1 = summary1.summary + summary1.consequences
-        content2 = summary2.summary + summary2.consequences
+        # 所有的类
+        class_query = Class.objects.filter(is_relation=False).values_list('class_id', flat=True)
+        # 遍历
+        for class_id in class_query:
+            # 热度
+            hot_value = PopRecord.objects.filter(
+                pid=OuterRef('id')
+            ).values('hotval')[:1]
 
-        # 拼接事件
-        content = '事件1：' + content1 + '。' + '事件2：' + content2 + '。'
-        # 去掉空格
-        content = ''.join(content.split())
+            # 该 topic 的所有帖子
+            post_ids = Post.objects.filter(class_id=class_id).annotate(
+                hot_value=Subquery(hot_value)
+            ).values(
+                'id',
+            ).order_by('-hot_value')[:4]
 
-        reset_num = 0  # 限制错误重试次数
-        while reset_num < 5:
-            # 调用 API
-            generated_text = Api(content, task)
+            # 生成两两组合
+            post_pairs = list(combinations(post_ids, 2))
+            print(class_id)
+            print(post_pairs)
 
-            # 成功：没有关系
-            if ("没有关系" in generated_text) or ("无直接关系" in generated_text):
-                return post1, "无直接关系", post2
+            # 遍历，两两比较
+            for pair in post_pairs:
+                post1 = int(pair[0]['id'])
+                post2 = int(pair[1]['id'])
+                # 访问数据库，获取帖子和评论
+                summary1 = Summary.objects.get(summary_id=post1)
+                summary2 = Summary.objects.get(summary_id=post2)
+                content1 = summary1.summary + summary1.consequences
+                content2 = summary2.summary + summary2.consequences
 
-            if "事件" in generated_text:
-                # 拆分关系描述
-                event1 = generated_text.split("是")[0].strip()
-                event2_and_relation = generated_text.split("是")[1].strip()
-                # 获取事件2和事件1及其关系描述
-                event2 = event2_and_relation.split("的")[0].strip()
-                relation = event2_and_relation.split("的")[1].strip().replace('。', '')
+                # 拼接事件
+                content = '事件1：' + content1 + '。' + '事件2：' + content2 + '。'
+                # 去掉空格
+                content = ''.join(content.split())
 
-            else:
-                print('error1:')
-                print(generated_text)
-                reset_num += 1
-                continue
+                reset_num = 0  # 限制错误重试次数
+                while reset_num < 5:
+                    # 调用 API
+                    generated_text = Api(content, task)
 
-            # 成功：返回
-            print('success:')
-            if event1 == "事件1" and event2 == "事件2":
-                return post1, relation, post2
-            else:
-                return post2, relation, post1
+                    # 成功：没有关系
+                    if ("没有关系" in generated_text) or ("无直接关系" in generated_text):
+                        print('none')
+                        print(generated_text)
+                        print('---')
+                        break
 
-        # 失败
-        if reset_num >= 5:
-            return post1, '无', post2
+                    if "事件" in generated_text:
+                        # 拆分关系描述
+                        event1 = generated_text.split("是")[0].strip()
+                        event2_and_relation = generated_text.split("是")[1].strip()
+                        # 获取事件2和事件1及其关系描述
+                        event2 = event2_and_relation.split("的")[0].strip()
+                        relation = event2_and_relation.split("的")[1].strip().replace('。', '')
+
+                    else:
+                        print('error1:')
+                        print(generated_text)
+                        print('---')
+                        reset_num += 1
+                        continue
+
+                    # 成功：返回
+                    print('success')
+                    print('---')
+                    if event1 == "事件1" and event2 == "事件2":
+                        with transaction.atomic():
+                            relation = Relation(
+                                post1=post1,
+                                post_relation=relation,
+                                post2=post2,
+                                class_id=class_id,
+                            )
+                            relation.save()
+                    else:
+                        with transaction.atomic():
+                            relation = Relation(
+                                post1=post2,
+                                post_relation=relation,
+                                post2=post1,
+                                class_id=class_id,
+                            )
+                            relation.save()
+                    break
+
+                # 失败
+                if reset_num >= 5:
+                    print('fail')
+                    print(generated_text)
+                    print('---')
+
+            # 更新 class 是否处理过
+            Class.objects.filter(class_id=class_id).update(is_relation=True)
 
     # 线程错误
     except Exception as e:

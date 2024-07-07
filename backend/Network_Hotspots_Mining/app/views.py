@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from app.controller.single_pass import launch_single_pass, get_data
 from app.controller.LLM import LLM_summary, LLM_class, LLM_relation
-from app.models import Comments, Post, Class, PopRecord, Summary
+from app.models import Comments, Post, Class, PopRecord, Summary, Relation
 from app.util.util import querySet_to_list
 from app.misc.data_processing import preprocess_data, mark_used, days_calculating
 from app.misc.clear_db import clear_db_class, clear_db_summary
@@ -65,8 +65,14 @@ def LLM_summary_db(request):
 
 
 def LLM(request):
+    # """ 聚类 """
     # launch_single_pass()
-    LLM_class()
+    #
+    # """ 类别总结 """
+    # LLM_class()
+
+    """ 事件关系 """
+    LLM_relation()
 
     return HttpResponse('text_cluster_catorizing done!')
 
@@ -74,21 +80,23 @@ def LLM(request):
 '''
 主页接口
 '''
-#判断话题类型函数
+
+
+# 判断话题类型函数
 def get_topic_type(topic_id):
     # 判断class表中是否有该话题
     if not Class.objects.filter(class_id=topic_id).exists():
         return "未分析"
-    
+
     # 获取对应class_id的所有post记录
     posts = Post.objects.filter(class_id=topic_id).values('correlation', 'sentiment_negative')
-    
+
     # 转换为DataFrame
     posts_df = pd.DataFrame(posts)
-    
+
     if posts_df.empty:
         return 0
-    
+
     # 根据条件分类
     def classify(row):
         if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
@@ -99,29 +107,30 @@ def get_topic_type(topic_id):
             return 3
         else:
             return 4
-    
+
     posts_df['category'] = posts_df.apply(classify, axis=1)
-    
+
     # 统计每个分类的数量
     category_counts = posts_df['category'].value_counts().to_dict()
-    
+
     # 判断是否存在舆论预警事件
     if category_counts.get(1, 0) > 0:
         return "舆论预警"
-    
+
     # 计算其余三种事件的数量并返回最多的类型
     two_count = category_counts.get(2, 0)
     three_count = category_counts.get(3, 0)
     four_count = category_counts.get(4, 0)
-    
+
     max_count = max(two_count, three_count, four_count)
-    
+
     if max_count == four_count:
         return "校内热点"
     elif max_count == three_count:
         return "校外热点"
     else:
         return "负面事件"
+
 
 # 获取热榜
 @require_http_methods(["GET"])
@@ -169,7 +178,7 @@ def get_speedlist(request):
     response_data = {
         "data": []
     }
-    
+
     for cls in class_querySet:
         class_type = get_topic_type(cls.class_id)
         response_data["data"].append({
@@ -192,21 +201,19 @@ def get_speedlist(request):
                 "value": cls.hot_value_perday
             })
 
-
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 
-#首页接口3
+# 首页接口3
 @require_http_methods(["GET"])
 def get_weekly_event_hotval(request):
-    
     '''
     注释的是不经过一定热度值筛选
     '''
     # # 获取最近7天的日期
     # end_date = datetime.date.today()
     # start_date = end_date - datetime.timedelta(days=7)
-    
+
     # # 获取最近7天的所有帖子记录
     # posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('id', 'time', 'correlation', 'sentiment_negative')
     hotval_threshold = 50  # 设置热度值阈值
@@ -214,12 +221,12 @@ def get_weekly_event_hotval(request):
     # 获取最近7天的日期
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=7)
-    
+
     # 获取最新的poprecord记录并且hotval大于阈值
     latest_poprecord = PopRecord.objects.filter(
         pid=OuterRef('pk')
     ).order_by('-recordtime')
-    
+
     # 获取最近7天且符合条件的所有帖子记录
     posts = Post.objects.annotate(
         latest_hotval=Subquery(latest_poprecord.values('hotval')[:1])
@@ -228,26 +235,26 @@ def get_weekly_event_hotval(request):
         time__lt=end_date,
         latest_hotval__gte=hotval_threshold
     ).values('id', 'time', 'correlation', 'sentiment_negative')
-    
+
     # 转换为DataFrame
     posts_df = pd.DataFrame(posts)
-    
+
     if posts_df.empty:
         return JsonResponse({"data": []})
-    
+
     # 将时间转换为日期
     posts_df['date'] = posts_df['time'].dt.date
-    
+
     # 获取相关帖子最新的pop记录
     pop_records = PopRecord.objects.filter(pid__in=posts_df['id']).values('pid', 'hotval', 'recordtime')
     pop_records_df = pd.DataFrame(pop_records).sort_values('recordtime').drop_duplicates('pid', keep='last')
-    
+
     # 合并数据
     merged_df = posts_df.merge(pop_records_df, left_on='id', right_on='pid', how='left')
-    
+
     # 替换缺失的hotval为0
     merged_df['hotval'] = merged_df['hotval'].fillna(0).astype(int)
-    
+
     # 根据条件分类
     def classify(row):
         if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
@@ -258,17 +265,17 @@ def get_weekly_event_hotval(request):
             return 3
         else:
             return 4
-    
+
     merged_df['category'] = merged_df.apply(classify, axis=1)
-    
+
     # 按日期和分类分组并求和
     grouped_df = merged_df.groupby(['date', 'category'])['hotval'].sum().unstack(fill_value=0).reset_index()
-    
+
     # 确保有所有需要的分类
     for category in [1, 2, 3, 4]:
         if category not in grouped_df:
             grouped_df[category] = 0
-    
+
     # 准备返回的数据结构
     data = []
     for _, row in grouped_df.iterrows():
@@ -280,36 +287,34 @@ def get_weekly_event_hotval(request):
             "date": row['date'].strftime("%Y-%m-%d")
         }
         data.append(daily_data)
-    
+
     # 返回JSON响应
     return JsonResponse({"data": data})
 
 
-
-#首页接口4
+# 首页接口4
 @require_http_methods(["GET"])
 def get_weekly_event_counts(request):
-    
     '''
     注释的是不经过一定热度值筛选
     '''
-        
+
     # end_date = datetime.date.today()
     # start_date = end_date - datetime.timedelta(days=7)
-    
+
     # # 获取最近7天的所有帖子记录
     # posts = Post.objects.filter(time__gte=start_date, time__lt=end_date).values('correlation', 'sentiment_negative')
-    
+
     hotval_threshold = 50  # 设置热度值阈值
     # 获取最近7天的日期
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=7)
-    
+
     # 获取最新的poprecord记录并且hotval大于阈值
     latest_poprecord = PopRecord.objects.filter(
         pid=OuterRef('pk')
     ).order_by('-recordtime')
-    
+
     # 获取最近7天且符合条件的所有帖子记录
     posts = Post.objects.annotate(
         latest_hotval=Subquery(latest_poprecord.values('hotval')[:1])
@@ -318,10 +323,10 @@ def get_weekly_event_counts(request):
         time__lt=end_date,
         latest_hotval__gte=hotval_threshold
     ).values('correlation', 'sentiment_negative')
-    
+
     # 转换为DataFrame
     posts_df = pd.DataFrame(posts)
-    
+
     if posts_df.empty:
         return JsonResponse({
             "data": {
@@ -331,7 +336,7 @@ def get_weekly_event_counts(request):
                 "prewarning": 0
             }
         })
-    
+
     # 根据条件分类
     def classify(row):
         if row['correlation'] > 0.75 and row['sentiment_negative'] < -15:
@@ -340,12 +345,12 @@ def get_weekly_event_counts(request):
             return 2
         else:
             return 3
-    
+
     posts_df['category'] = posts_df.apply(classify, axis=1)
-    
+
     # 统计每个分类的数量
     category_counts = posts_df['category'].value_counts().to_dict()
-    
+
     # 确保返回的结构中包含所有需要的分类
     result = {
         "negative": category_counts.get(2, 0),
@@ -353,12 +358,12 @@ def get_weekly_event_counts(request):
         "warning": 0,
         "prewarning": category_counts.get(1, 0)
     }
-    
+
     # 返回JSON响应
     return JsonResponse({"data": result})
 
 
-#首页接口5
+# 首页接口5
 @require_http_methods(["GET"])
 def get_weekly_viewnum_stats(request):
     # 获取当前时间和5周前的时间
@@ -415,12 +420,13 @@ def get_weekly_viewnum_stats(request):
 
     return JsonResponse(data, safe=False)
 
-#首页接口6
+
+# 首页接口6
 @require_http_methods(["GET"])
 def get_monthly_viewnum_stats(request):
     # 获取当前时间和6个月前的时间
     now = datetime.date.today()
-    start_date = now - timedelta(days=12*30)
+    start_date = now - timedelta(days=12 * 30)
 
     # 从Post表中获取最近6个月的帖子记录，并转换为DataFrame
     posts = Post.objects.filter(time__gte=start_date, correlation__gt=0.75).values()
@@ -455,8 +461,8 @@ def get_monthly_viewnum_stats(request):
     # 构建API返回数据
     data = []
     for i in range(12):
-        month_start = (now - timedelta(days=i*30)).strftime('%Y-%m')
-        month_label = (now - timedelta(days=i*30)).strftime('%m月')
+        month_start = (now - timedelta(days=i * 30)).strftime('%Y-%m')
+        month_label = (now - timedelta(days=i * 30)).strftime('%m月')
         viewnum = monthly_viewnum.loc[monthly_viewnum['month'] == month_start, 'viewnum'].sum()
         data.append({
             "month": month_label,
@@ -464,6 +470,7 @@ def get_monthly_viewnum_stats(request):
         })
 
     return JsonResponse(data, safe=False)
+
 
 '''
 话题详情页面接口
@@ -512,39 +519,40 @@ def get_topic_details(request):
     else:
         # 返回400 Bad Request响应
         return JsonResponse({'error': 'Missing topicID'}, status=400)
-    
+
+
 # 话题页接口2
 @require_http_methods(["GET"])
 def get_topic_comments_stats(request):
     # 获取请求参数中的id
     topic_id = request.GET.get('topicID', None)
-    
+
     # 检查id是否有效
     try:
         topic_id = int(topic_id)
     except (TypeError, ValueError):
         return HttpResponseBadRequest("Invalid topic ID format.")
-    
+
     # 检查topic_id是否存在于post表的class_id字段中
     if not Post.objects.filter(class_id=topic_id).exists():
         return HttpResponseBadRequest("Topic ID does not exist.")
-    
+
     # 提取post表中所有class_id符合传入id的记录
     posts = Post.objects.filter(class_id=topic_id).values('id')
-    
+
     # 提取comments表中所有符合条件的数据的sentiment字段
     post_ids = [post['id'] for post in posts]
     comments = Comments.objects.filter(pid__in=post_ids).values('sentiment')
-    
+
     # 转换为DataFrame
     comments_df = pd.DataFrame(comments)
-    
+
     if comments_df.empty:
         return JsonResponse({"data": []})
-    
+
     # 删除或置零极端的sentiment值
     comments_df['sentiment'] = comments_df['sentiment'].apply(lambda x: 0 if x > 0.9 or x < -0.95 else x)
-    
+
     # 根据分类规则对sentiment数据进行分类
     def classify_sentiment(sentiment):
         if sentiment < -0.7:
@@ -555,12 +563,12 @@ def get_topic_comments_stats(request):
             return 3
         else:
             return 4
-    
+
     comments_df['category'] = comments_df['sentiment'].apply(classify_sentiment)
-    
+
     # 统计各类别的数量
     category_counts = comments_df['category'].value_counts().sort_index().to_dict()
-    
+
     # 构建返回的数据格式
     response_data = {
         "data": [
@@ -570,7 +578,7 @@ def get_topic_comments_stats(request):
             {"name": "正常", "value": category_counts.get(4, 0)},
         ]
     }
-    
+
     return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
 
 
@@ -668,40 +676,20 @@ def get_topic_relation(request):
         return JsonResponse({'error': 'Invalid id format'}, status=400)
     if topic_id:
         try:
-            # 热度
-            hot_value = PopRecord.objects.filter(
-                pid=OuterRef('id')
-            ).values('hotval')[:1]
-
-            # 该 topic 的所有帖子
-            post_ids = Post.objects.filter(class_id=topic_id).annotate(
-                hot_value=Subquery(hot_value)
-            ).values(
-                'id',
-                'hot_value'
-            ).order_by('-hot_value')[:4]
-
-            # 生成两两组合
-            post_pairs = list(combinations(post_ids, 2))
-            print(post_pairs)
-
             node = []
             line = []
-            # 遍历
-            for pair in post_pairs:
-                post1 = int(pair[0]['id'])
-                post2 = int(pair[1]['id'])
-                post_front, relation, post_back = LLM_relation(post1, post2, task="3")
 
-                # 保存
-                response_data = {"from": post_front, "to": post_back, "text": relation}
-                line.append(response_data)
-                print(Post.objects.get(id=post_front).title)
-                print(relation)
-                print(Post.objects.get(id=post_back).title)
-                print('------')
+            relation_list = Relation.objects.filter(class_id=topic_id)
+            for relation in relation_list:
+                response_line = {"from": relation.post1, "to": relation.post2, "text": relation.post_relation}
+                node1 = {"id": relation.post1, "text": Post.objects.get(id=relation.post1).title}
+                node2 = {"id": relation.post2, "text": Post.objects.get(id=relation.post2).title}
+                line.append(response_line)
+                node.append(node1)
+                node.append(node2)
 
             response_data = {
+                "node": node,
                 "line": line,
             }
             return JsonResponse(response_data)

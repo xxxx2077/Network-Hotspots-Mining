@@ -80,10 +80,12 @@ class AuthUserUserPermissions(models.Model):
 class Class(models.Model):
     class_id = models.AutoField(primary_key=True)
     class_title = models.CharField(max_length=100, blank=True, null=True)
-    key_points = models.CharField(db_column='Key_points', max_length=100, blank=True, null=True)  # Field name made lowercase.
+    key_points = models.CharField(db_column='Key_points', max_length=100, blank=True,
+                                  null=True)  # Field name made lowercase.
     summary = models.CharField(max_length=1000, blank=True, null=True)
     hot_value = models.BigIntegerField(blank=True, null=True)
     hot_value_perday = models.BigIntegerField(blank=True, null=True)
+    is_relation = models.IntegerField()
 
     class Meta:
         managed = False
@@ -164,11 +166,16 @@ class Picture(models.Model):
 class PopRecord(models.Model):
     pid = models.IntegerField(db_comment='帖子id')
     hotval = models.FloatField(db_column='hotVal', blank=True, null=True)  # Field name made lowercase.
-    hotval_rate = models.FloatField(db_column='hotVal_rate', blank=True, null=True, db_comment='热度变化')  # Field name made lowercase.
-    viewnum = models.IntegerField(db_column='viewNum', blank=True, null=True, db_comment='浏览次数')  # Field name made lowercase.
-    likenum = models.IntegerField(db_column='likeNum', blank=True, null=True, db_comment='点赞数')  # Field name made lowercase.
-    comnum = models.IntegerField(db_column='comNum', blank=True, null=True, db_comment='评论数')  # Field name made lowercase.
-    c_likenum = models.IntegerField(db_column='c_likeNum', blank=True, null=True, db_comment='评论点赞总数')  # Field name made lowercase.
+    hotval_rate = models.FloatField(db_column='hotVal_rate', blank=True, null=True,
+                                    db_comment='热度变化')  # Field name made lowercase.
+    viewnum = models.IntegerField(db_column='viewNum', blank=True, null=True,
+                                  db_comment='浏览次数')  # Field name made lowercase.
+    likenum = models.IntegerField(db_column='likeNum', blank=True, null=True,
+                                  db_comment='点赞数')  # Field name made lowercase.
+    comnum = models.IntegerField(db_column='comNum', blank=True, null=True,
+                                 db_comment='评论数')  # Field name made lowercase.
+    c_likenum = models.IntegerField(db_column='c_likeNum', blank=True, null=True,
+                                    db_comment='评论点赞总数')  # Field name made lowercase.
     top = models.IntegerField(blank=True, null=True)
     recordtime = models.DateTimeField(db_column='recordTime', blank=True, null=True)  # Field name made lowercase.
 
@@ -202,7 +209,8 @@ class Summary(models.Model):
     date = models.CharField(max_length=50, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     participants = models.CharField(max_length=100, blank=True, null=True)
-    key_points = models.CharField(db_column='Key_points', max_length=100, blank=True, null=True)  # Field name made lowercase.
+    key_points = models.CharField(db_column='Key_points', max_length=100, blank=True,
+                                  null=True)  # Field name made lowercase.
     summary = models.CharField(max_length=1000, blank=True, null=True)
     consequences = models.CharField(max_length=1000, blank=True, null=True)
     comments = models.CharField(max_length=1000, blank=True, null=True)
@@ -222,3 +230,15 @@ class Users(models.Model):
     class Meta:
         managed = False
         db_table = 'users'
+
+
+class Relation(models.Model):
+    id = models.IntegerField(primary_key=True)
+    post1 = models.IntegerField(blank=True, null=True)
+    post_relation = models.CharField(max_length=255)
+    post2 = models.IntegerField(blank=True, null=True)
+    class_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'relation'
