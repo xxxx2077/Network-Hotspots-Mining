@@ -41,7 +41,7 @@
         <dv-border-box-12 id="carousel">
           <span>实时热点榜</span>
           <div style="width: 90%; height: 90%;">
-            <Carousel :header="['类型', '事件', '热度']" :data="hotpointData" :rowNum="8" :columnWidth="[50, 85, 200, 80]"
+            <Carousel :header="['类型', '事件', '热度']" :data="hotpointData" :rowNum="8" :columnWidth="[60, 100, 200, 80]"
               :flag="hotpointDataFlag" :onClick="clickHotList">
             </Carousel>
           </div>
@@ -66,7 +66,7 @@
         <dv-border-box-12 id="carousel">
           <span>热度上升榜</span>
           <div style="width: 90%; height: 83%;">
-            <Carousel :header="['类型', '事件', '速度']" :data="hotpointSpeed" :rowNum="5" :columnWidth="[50, 85, 200, 80]"
+            <Carousel :header="['类型', '事件', '速度']" :data="hotpointSpeed" :rowNum="5" :columnWidth="[60, 100, 200, 80]"
               :flag="hotpointSpeedFlag" :onClick="clickSpeedList">
             </Carousel>
           </div>
@@ -264,7 +264,7 @@ export default {
 
 .title {
   color: white;
-  font-size: 25px;
+  font-size: 2vw;
   font-weight: bold;
 }
 
