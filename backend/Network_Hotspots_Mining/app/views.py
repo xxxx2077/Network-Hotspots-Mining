@@ -681,9 +681,9 @@ def get_topic_relation(request):
 
             relation_list = Relation.objects.filter(class_id=topic_id)
             for relation in relation_list:
-                response_line = {"from": relation.post1, "to": relation.post2, "text": relation.post_relation}
-                node1 = {"id": relation.post1, "text": Post.objects.get(id=relation.post1).title}
-                node2 = {"id": relation.post2, "text": Post.objects.get(id=relation.post2).title}
+                response_line = {"from": str(relation.post1), "to": str(relation.post2), "text": relation.post_relation}
+                node1 = {"id": str(relation.post1), "text": Post.objects.get(id=relation.post1).title}
+                node2 = {"id": str(relation.post2), "text": Post.objects.get(id=relation.post2).title}
                 line.append(response_line)
                 node.append(node1)
                 node.append(node2)

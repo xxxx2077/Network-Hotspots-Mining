@@ -11,6 +11,10 @@ export default {
     components: {
         RelationGraph,
     },
+    props: {
+        nodeData: { type: Array, required: true },
+        lineData: { type: Array, required: true }
+    },
     data() {
         return {
             graphOption: {
@@ -31,33 +35,31 @@ export default {
         }
     },
     mounted() {
-        this.showGraph();
+        this.showGraph(this.$props.nodeData, this.$props.lineData);
     },
     beforeDestroy() {
         this.$refs.graphRef.getInstance().stopAutoLayout();
     },
     methods: {
-        showGraph() {
+        showGraph(node, line) {
+            if (node.length === 0) {
+                node.push({ id: '1', text: '话题内帖子没有强相关关系' });
+            }
             const jsonData = {
                 rootId: 'a',
-                nodes: [
-                    { id: '1', text: 'A' },
-                    { id: '2', text: 'B' },
-                    { id: '3', text: 'C' },
-                    { id: '4', text: 'E' }
-                ],
-                lines: [
-                    { from: '1', to: '2', text: '关系1' },
-                    { from: '1', to: '3', text: '关系2' },
-                    { from: '1', to: '4', text: '关系3' },
-                    { from: '2', to: '4', text: '关系4' }
-                ]
+                nodes: node,
+                lines: line,
             }
 
             this.$refs.graphRef.setJsonData(jsonData, (graphInstance) => {
-                graphInstance.setZoom(30);
+                graphInstance.setZoom(100);
             });
         },
+    },
+    watch: {
+        nodeData(newVal) {
+            this.showGraph(newVal, this.$props.lineData);
+        }
     }
 }
 </script>

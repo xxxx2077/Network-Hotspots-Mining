@@ -45,9 +45,9 @@ export function getComment(id) {
 }
 
 // 获取事件图谱
-export function getMap(id) {
+export function getRelation(id) {
     return request({
-        url: '/topic/map',
+        url: '/topic/relation',
         method: 'GET',
         params: {
             topicID: id

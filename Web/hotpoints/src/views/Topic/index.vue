@@ -57,7 +57,7 @@
         <el-row style="height: 39%; margin-top: 1%;" :gutter="15">
             <el-col :span="12" style="height: 100%;">
                 <Card title="事件图谱">
-                    <Relation></Relation>
+                    <Relation :nodeData="relationNode" :lineData="relationLine"></Relation>
                 </Card>
             </el-col>
             <el-col :span="12" style="height: 100%;">
@@ -77,7 +77,7 @@ import Nightingale from '@/components/Nightingale.vue';
 import SmoothLine from '@/components/SmoothLine.vue';
 import Carousel from '@/components/Carousel.vue';
 import Relation from '@/components/Relation.vue';
-import { getTopicDetail, getTopicVisits, getPostList, getComment, getMap } from '@/api/topic';
+import { getTopicDetail, getTopicVisits, getPostList, getComment, getRelation } from '@/api/topic';
 
 export default {
     name: 'Topic',
@@ -110,6 +110,8 @@ export default {
             visitTrendData: [],
             postList: [['', '', '', '']],
             postListFlag: false,
+            relationNode: [],
+            relationLine: [],
         }
     },
     created() {
@@ -156,6 +158,16 @@ export default {
             if (res.status == 200) {
                 this.commentData = res.data.data;
                 this.commentFlag = !this.commentFlag;
+            }
+        }).catch((err) => {
+            console.log(err);
+        })
+
+        // 获取事件关系图
+        getRelation(this.topicID).then((res) => {
+            if (res.status == 200) {
+                this.relationNode = res.data.node;
+                this.relationLine = res.data.line;
             }
         }).catch((err) => {
             console.log(err);
