@@ -248,17 +248,20 @@ def LLM_class(task="2"):
                     hot_value_total += float(hot_value)
                 for hot_value_perday in (cluster2hot_perday_list[it]):
                     hot_value_perday_total += float(hot_value_perday)
-                with transaction.atomic():
-                    class_ = Class(
-                        class_id=int(it) + 1,
-                        class_title=generated_json.get('class_title'),
-                        key_points=generated_json.get('Key_points'),
-                        summary=generated_json.get('summary'),
-                        hot_value=hot_value_total,
-                        hot_value_perday=hot_value_perday_total,
-                        is_relation=False,
-                    )
-                    class_.save()
+
+                # 热度 > 250 才计入
+                if hot_value_total > 250:
+                    with transaction.atomic():
+                        class_ = Class(
+                            class_id=int(it) + 1,
+                            class_title=generated_json.get('class_title'),
+                            key_points=generated_json.get('Key_points'),
+                            summary=generated_json.get('summary'),
+                            hot_value=hot_value_total,
+                            hot_value_perday=hot_value_perday_total,
+                            is_relation=False,
+                        )
+                        class_.save()
                 print('success:')
                 print(generated_text)
                 print('---')

@@ -38,43 +38,72 @@ def clear(request):
     return HttpResponse('clear has done')
 
 
-def LLM_summary_db(request):
-    print('LLM_summary_db is running...')
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     id_querySet = Post.objects.values('id').all()
-    #     id_list = querySet_to_list(id_querySet,'id')
-    #     print(id_list)
-    #     print('wait for result...')
-    #     for id in id_list:
-    #         executor.submit(LLM_summary, id)
-    #     executor.shutdown()
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        id_querySet = Post.objects.filter(is_summaried=False).values('id').order_by('-time')
-        id_list = querySet_to_list(id_querySet, 'id')
-        print(len(id_list))
-        print(id_list)
-        print('wait for result...')
-        result = executor.map(LLM_summary, id_list)
-        # with open(os.path.join(os.path.dirname(__file__),"result/LLM_summary_db_res.txt"), "w", encoding="utf-8") as f:
-        #     for res in result:
-        #         res = str(res)+'\n'
-        #         print(res)
-        #         f.write(res)
-
-    return HttpResponse('LLM_summary_db done!')
+# def LLM_summary_db(request):
+#     print('LLM_summary_db is running...')
+#     # with concurrent.futures.ThreadPoolExecutor() as executor:
+#     #     id_querySet = Post.objects.values('id').all()
+#     #     id_list = querySet_to_list(id_querySet,'id')
+#     #     print(id_list)
+#     #     print('wait for result...')
+#     #     for id in id_list:
+#     #         executor.submit(LLM_summary, id)
+#     #     executor.shutdown()
+#     with concurrent.futures.ThreadPoolExecutor() as executor:
+#         # post 热度
+#         hot_value = PopRecord.objects.filter(
+#             pid=OuterRef('id')
+#         ).values('hotval')[:1]
+#
+#         id_querySet = Post.objects.filter(is_summaried=False).annotate(
+#             hot_value=Subquery(hot_value)
+#         ).values('id').order_by('-hot_value')[:500]
+#
+#         if id_querySet.exists():
+#             id_list = querySet_to_list(id_querySet, 'id')
+#             result = executor.map(LLM_summary, id_list)
+#
+#     return "Processed new posts."
 
 
 def LLM(request):
-    # """ 聚类 """
-    # launch_single_pass()
-    #
-    # """ 类别总结 """
-    # LLM_class()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # post 热度
+        hot_value = PopRecord.objects.filter(
+            pid=OuterRef('id')
+        ).values('hotval')[:1]
+
+        id_querySet = Post.objects.filter(is_summaried=False).annotate(
+            hot_value=Subquery(hot_value)
+        ).values('id').order_by('-hot_value')[:200]
+
+        if id_querySet.exists():
+            id_list = querySet_to_list(id_querySet, 'id')
+            result = executor.map(LLM_summary, id_list)
+
+    print("----------------------------------------------------------"
+          "总结完成"
+          "----------------------------------------------------------")
+
+    """ 聚类 """
+    launch_single_pass()
+
+    print("----------------------------------------------------------"
+          "聚类完成"
+          "----------------------------------------------------------")
+
+    """ 类别总结 """
+    LLM_class()
+
+    print("----------------------------------------------------------"
+          "类别总结完成"
+          "----------------------------------------------------------")
 
     """ 事件关系 """
     LLM_relation()
 
-    return HttpResponse('text_cluster_catorizing done!')
+    print("----------------------------------------------------------"
+          "事件关系完成"
+          "----------------------------------------------------------")
 
 
 '''
@@ -682,8 +711,8 @@ def get_topic_relation(request):
             relation_list = Relation.objects.filter(class_id=topic_id)
             for relation in relation_list:
                 response_line = {"from": relation.post1, "to": relation.post2, "text": relation.post_relation}
-                node1 = {"id": relation.post1, "text": Post.objects.get(id=relation.post1).title}
-                node2 = {"id": relation.post2, "text": Post.objects.get(id=relation.post2).title}
+                node1 = {"id": relation.post1, "text": Post.objects.get(id=relation.post1).title.replace('。', '')}
+                node2 = {"id": relation.post2, "text": Post.objects.get(id=relation.post2).title.replace('。', '')}
                 line.append(response_line)
                 node.append(node1)
                 node.append(node2)

@@ -24,7 +24,7 @@ urlpatterns = [
     # path('preprocess/',views.preprocess),
     path('clear/',views.clear),
     path('LLM/',views.LLM),
-    path('LLM_summary_db/',views.LLM_summary_db),
+    # path('LLM_summary_db/',views.LLM_summary_db),
 
     # 主页
     path('hotlist',views.get_hotlist),
