@@ -63,8 +63,9 @@ export default {
                     top: '3%',
                 },
                 legend: {
+                    type: 'scroll',
                     top: '3%',
-                    left: '35%',
+                    left: '40%',
                     icon: 'circle',
                     textStyle: {
                         color: this.$props.fontColor

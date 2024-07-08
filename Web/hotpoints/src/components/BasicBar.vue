@@ -43,7 +43,7 @@ export default {
                 },
                 legend: {
                     right: '3%',
-                    top: '3%',
+                    top: '10%',
                     icon: 'roundRect',
                     textStyle: {
                         color: 'white'
