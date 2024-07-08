@@ -3,6 +3,8 @@ import sys
 import jieba
 import json
 import numpy as np
+from django.db.models import OuterRef, Subquery, Value
+from django.db.models.functions import Concat
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from app.models import Summary, PopRecord, Post
@@ -112,12 +114,25 @@ class SinglePassCluster():
 
 
 def get_data():
-    summary_querySet = Summary.objects.filter(is_abnormal=False).all().values('summary_id', 'summary').all()
-    summary_id_list = querySet_to_list(summary_querySet, 'summary_id')
-    summary_list = querySet_to_list(summary_querySet, 'summary')
+    summary_subquery = Summary.objects.filter(
+        is_abnormal=False,
+        summary_id=OuterRef('id')
+    ).values('summary')[:1]
+    posts_querySet = Post.objects.filter(
+        is_summaried=True
+    ).annotate(
+        summary=Subquery(summary_subquery),
+        post = Concat('title', Value('。'), 'summary')
+    ).values(
+        'id',
+        'post',
+    )
+    posts_id_list = querySet_to_list(posts_querySet, 'id')
+    posts_list = querySet_to_list(posts_querySet, 'post')
+
     hot_value_list = []
     hot_value_rate_list = []
-    for idx, summary_id in enumerate(summary_id_list):
+    for idx, summary_id in enumerate(posts_id_list):
         print(summary_id)
         hot_value_dic = PopRecord.objects.filter(pid=summary_id).all().order_by('-recordtime').values('hotval',
                                                                                                       'hotval_rate').first()
@@ -130,7 +145,7 @@ def get_data():
         print(hot_value_rate)
         hot_value_list.append(hot_value)
         hot_value_rate_list.append(hot_value_rate)
-    return summary_id_list, summary_list, hot_value_list, hot_value_rate_list
+    return posts_id_list, posts_list, hot_value_list, hot_value_rate_list
 
 
 def launch_single_pass():

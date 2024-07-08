@@ -12,6 +12,8 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from urllib3.exceptions import InsecureRequestWarning
 
+S = '注意：一定要进行1. 类别标题：'
+
 
 # 设定每10秒最多1次请求
 @sleep_and_retry
@@ -109,7 +111,6 @@ def LLM_summary(post_id, task="1"):
                     generated_json['Key_points'] = line.split("关键点：")[1].strip()
                 elif line.startswith("事件总结：") or line.startswith("5. 事件总结："):
                     generated_json['summary'] = line.split("事件总结：")[1].strip()
-                    print(generated_json['summary'])
                 elif line.startswith("影响及后果：") or line.startswith("6. 影响及后果："):
                     generated_json['consequences'] = line.split("影响及后果：")[1].strip()
                 elif line.startswith("评论观点：") or line.startswith("7. 评论观点："):
@@ -185,15 +186,25 @@ def LLM_class(task="2"):
     with open('./app/result/res_cluster2hot_perday.json', 'r', encoding='utf-8') as file:
         cluster2hot_perday_list = json.load(file)
 
+    class_id = 0
     # 遍历每个类别的聚类结果
     for it in content_list:
         try:
-            print(it)
+            print(it, " -- ", class_id)
             # 转换 json 字符串
             content = json.dumps(content_list[it], ensure_ascii=False)
 
+            # 计算热度
+            hot_value_total = 0.0
+            hot_value_perday_total = 0.0
+            for hot_value in (cluster2hot_list[it]):
+                hot_value_total += float(hot_value)
+            for hot_value_perday in (cluster2hot_perday_list[it]):
+                hot_value_perday_total += float(hot_value_perday)
+
             reset_num = 0  # 限制错误重试次数
-            while reset_num < 5:
+            # 热度 > 250 才计入
+            while reset_num < 5 and hot_value_total > 250:
                 # 调用 API
                 generated_text = Api(content, task)
 
@@ -242,26 +253,18 @@ def LLM_class(task="2"):
                     continue
 
                 # 成功：存入数据库
-                hot_value_total = 0.0
-                hot_value_perday_total = 0.0
-                for hot_value in (cluster2hot_list[it]):
-                    hot_value_total += float(hot_value)
-                for hot_value_perday in (cluster2hot_perday_list[it]):
-                    hot_value_perday_total += float(hot_value_perday)
-
-                # 热度 > 250 才计入
-                if hot_value_total > 250:
-                    with transaction.atomic():
-                        class_ = Class(
-                            class_id=int(it) + 1,
-                            class_title=generated_json.get('class_title'),
-                            key_points=generated_json.get('Key_points'),
-                            summary=generated_json.get('summary'),
-                            hot_value=hot_value_total,
-                            hot_value_perday=hot_value_perday_total,
-                            is_relation=False,
-                        )
-                        class_.save()
+                class_id = class_id + 1
+                with transaction.atomic():
+                    class_ = Class(
+                        class_id=int(it) + 1,
+                        class_title=generated_json.get('class_title'),
+                        key_points=generated_json.get('Key_points'),
+                        summary=generated_json.get('summary'),
+                        hot_value=hot_value_total,
+                        hot_value_perday=hot_value_perday_total,
+                        is_relation=False,
+                    )
+                    class_.save()
                 print('success:')
                 print(generated_text)
                 print('---')
@@ -289,7 +292,7 @@ def LLM_class(task="2"):
 def LLM_relation(task="3"):
     try:
         # 所有的类
-        class_query = Class.objects.filter(is_relation=False).values_list('class_id', flat=True)
+        class_query = Class.objects.filter(is_relation=False).values_list('class_id', flat=True).order_by('-class_id')
         # 遍历
         for class_id in class_query:
             # 热度
@@ -302,7 +305,11 @@ def LLM_relation(task="3"):
                 hot_value=Subquery(hot_value)
             ).values(
                 'id',
-            ).order_by('-hot_value')[:4]
+                'hot_value'
+            ).order_by('hot_value')
+
+            # 取热度大于 100 的帖子
+            post_ids = [post_id for post_id in post_ids if post_id['hot_value'] >= 100]
 
             # 生成两两组合
             post_pairs = list(combinations(post_ids, 2))
@@ -311,13 +318,15 @@ def LLM_relation(task="3"):
 
             # 遍历，两两比较
             for pair in post_pairs:
-                post1 = int(pair[0]['id'])
-                post2 = int(pair[1]['id'])
+                post1_id = int(pair[0]['id'])
+                post2_id = int(pair[1]['id'])
                 # 访问数据库，获取帖子和评论
-                summary1 = Summary.objects.get(summary_id=post1)
-                summary2 = Summary.objects.get(summary_id=post2)
-                content1 = summary1.summary + summary1.consequences
-                content2 = summary2.summary + summary2.consequences
+                post1 = Post.objects.get(id=post1_id)
+                post2 = Post.objects.get(id=post2_id)
+                summary1 = Summary.objects.get(summary_id=post1_id)
+                summary2 = Summary.objects.get(summary_id=post2_id)
+                content1 = post1.title + post1.content + '总结：' + summary1.summary
+                content2 = post2.title + post2.content + '总结：' + summary2.summary
 
                 # 拼接事件
                 content = '事件1：' + content1 + '。' + '事件2：' + content2 + '。'
@@ -328,15 +337,16 @@ def LLM_relation(task="3"):
                 while reset_num < 5:
                     # 调用 API
                     generated_text = Api(content, task)
+                    print(generated_text)
 
                     # 成功：没有关系
-                    if ("没有关系" in generated_text) or ("无直接关系" in generated_text):
+                    if ("没有联系" in generated_text) or ("无直接联系" in generated_text):
                         print('none')
                         print(generated_text)
                         print('---')
                         break
 
-                    if "事件" in generated_text:
+                    if "是事件" in generated_text:
                         # 拆分关系描述
                         event1 = generated_text.split("是")[0].strip()
                         event2_and_relation = generated_text.split("是")[1].strip()
@@ -348,27 +358,31 @@ def LLM_relation(task="3"):
                         print('error1:')
                         print(generated_text)
                         print('---')
+                        content = '回答格式： 事件1是事件2的[联系]' + content
                         reset_num += 1
                         continue
 
                     # 成功：返回
                     print('success')
+                    print(Post.objects.get(id=post1_id).title)
+                    print(relation)
+                    print(Post.objects.get(id=post2_id).title)
                     print('---')
                     if event1 == "事件1" and event2 == "事件2":
                         with transaction.atomic():
                             relation = Relation(
-                                post1=post1,
+                                post1=post1_id,
                                 post_relation=relation,
-                                post2=post2,
+                                post2=post2_id,
                                 class_id=class_id,
                             )
                             relation.save()
                     else:
                         with transaction.atomic():
                             relation = Relation(
-                                post1=post2,
+                                post1=post2_id,
                                 post_relation=relation,
-                                post2=post1,
+                                post2=post1_id,
                                 class_id=class_id,
                             )
                             relation.save()
