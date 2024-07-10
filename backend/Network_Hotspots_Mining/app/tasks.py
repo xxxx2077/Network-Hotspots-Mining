@@ -9,7 +9,7 @@ from app.controller.single_pass import launch_single_pass
 
 # 监听数据库消息，自动更新
 @shared_task
-def LLM():
+def LLM_summary_db():
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # post 热度
         hot_value = PopRecord.objects.filter(
@@ -28,6 +28,8 @@ def LLM():
           "总结完成"
           "----------------------------------------------------------")
 
+
+def LLM_class_db():
     """ 聚类 """
     launch_single_pass()
 

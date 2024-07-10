@@ -13,8 +13,12 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # 定时任务
 app.conf.beat_schedule = {
     'check_for_new_posts': {
-        'task': 'app.tasks.LLM',
-        'schedule': crontab(minute='*/30'),  # 每60分钟执行一次
+        'task': 'app.tasks.LLM_summary_db',
+        'schedule': crontab(minute='*/30'),  # 每90分钟执行一次
+    },
+    'check_for_new_class': {
+        'task': 'app.tasks.LLM_class_db',
+        'schedule': crontab(minute='*/60'),  # 每90分钟执行一次
     }
 }
 # 自动发现并注册 Django 项目中所有的 Celery 任务
