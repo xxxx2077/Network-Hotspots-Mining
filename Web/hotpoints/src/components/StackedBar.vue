@@ -60,7 +60,7 @@ export default {
                         }
                     }],
                     right: '3%',
-                    top: '3%'
+                    top: '15%'
                 },
                 grid: {
                     bottom: '15%',

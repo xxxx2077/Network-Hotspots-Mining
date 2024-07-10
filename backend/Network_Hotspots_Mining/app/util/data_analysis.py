@@ -168,17 +168,17 @@ def plot_sentiment_negative_distribution(connector):
 
     try:
         # 查询 sentiment 字段数据
-        query = '''
-                SELECT sentiment_negative 
-                FROM post 
-                WHERE time BETWEEN '2024-06-20' AND '2024-07-5'
-                AND sentiment_negative < -5 ;
-                '''
         # query = '''
-        #         SELECT correlation 
+        #         SELECT sentiment_negative 
         #         FROM post 
-        #         WHERE time BETWEEN '2024-06-30' AND '2024-07-5'
+        #         WHERE time BETWEEN '2024-06-20' AND '2024-07-5'
+        #         AND sentiment_negative < -5 ;
         #         '''
+        query = '''
+                SELECT correlation 
+                FROM post 
+                WHERE time BETWEEN '2024-06-30' AND '2024-07-5'
+                '''
         sentiments = connector.execute_query(query)
         
         # 将数据转换为 pandas DataFrame
@@ -190,14 +190,14 @@ def plot_sentiment_negative_distribution(connector):
         
         # 计算直方图的取值范围和间隔
         sentiment_range = (df['sentiment'].min(), df['sentiment'].max())
-        bin_width = (sentiment_range[1] - sentiment_range[0]) / 30  # 将范围分成20个区段
+        bin_width = (sentiment_range[1] - sentiment_range[0]) / 50  # 将范围分成20个区段
         bins = np.arange(sentiment_range[0], sentiment_range[1] + bin_width, bin_width)
         
         # 使用 pandas 的 hist 方法绘制直方图，区间范围和间隔自适应
         df['sentiment'].hist(bins=bins, edgecolor='black', density=True)
         
-        plt.title('Sentiment Distribution')
-        plt.xlabel('Sentiment')
+        plt.title('Correlation Distribution')
+        plt.xlabel('Correlation')
         plt.ylabel('Frequency')
         plt.grid(False)
         plt.show()
@@ -218,7 +218,7 @@ def main():
         database="sse_training"
     )
     db_connector.connect()
-    plot_sentiment_distribution(db_connector)
+    plot_sentiment_negative_distribution(db_connector)
     db_connector.disconnect()
     # # df = get_max_hotval_data(db_connector)
     # plot_sentiment_negative_distribution(db_connector)
