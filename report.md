@@ -1,10 +1,28 @@
 # Development report
 
+## 展示
+
+- ppt连接：
+- 【金山文档 | WPS云文档】 演示ppt第一版
+  https://kdocs.cn/l/cc11JAzLurit
+
+
+
+![image-20240714213221533](../../../AppData/Roaming/Typora/typora-user-images/image-20240714213221533.png)
+
+![image-20240714213231941](../../../AppData/Roaming/Typora/typora-user-images/image-20240714213231941.png)
+
+
+
+
+
 
 
 ## 运行须知
 
-子项目的readme文件中有的东西可以不写，说明一下该子项目负责的模块功能就行
+爬虫与部署了各类模型的云服务器位于学院服务器，数据库部署在云端。现已停止维护，存在无法连接的可能。
+
+
 
 ### 爬虫
 
@@ -17,6 +35,8 @@
 - 日志记录功能目前在Linux环境可用，Windows下会报错（可以禁用日志功能）
 
 #### 运行前准备
+
+- 请根据setting要求配置爬虫cookie、数据库与情感分析云服务token
 
 - 安装百度飞桨paddlepaddle（用于运行ocr）
 
@@ -39,7 +59,9 @@
 
 *requirements_env.txt是pip list --format=freeze生成*
 
-*爬虫运行环境可以参考以上两个txt文件*
+*爬虫运行环境可以参考以上两个txt文件*	
+
+
 
 #### 运行和结束
 
@@ -55,7 +77,17 @@
 
 ### 数据库
 
+远程连接：
 
+​    host="sse-21311572-train.mysql.rds.aliyuncs.com",
+
+​    port="3307",
+
+​    user="SSE_user1",
+
+​    password="SSE_user1test",
+
+​    database="sse_training",
 
 ### 后端
 
@@ -169,7 +201,7 @@ SchoolMarket/
 
 ### 数据库
 
-
+相关维护更新逻辑已接入爬虫子项目
 
 ### 后端
 
@@ -268,11 +300,24 @@ Baichuan2/
 
 ## 技术报告
 
-展示技术工作以及个人贡献，顺序按ppt的来，简单讲讲用的什么怎么用的就行，留点开发建议。涉及个人工作的东西不会提交到最终的github上。
+### 整体架构
 
-### 整体架构（不用写
+![image-20240714213400381](../../../AppData/Roaming/Typora/typora-user-images/image-20240714213400381.png)
 
-### zjt
+![image-20240714213411519](../../../AppData/Roaming/Typora/typora-user-images/image-20240714213411519.png)
+
+
+
+### 开发工具
+
+- 使用github进行代码协作开发（暂未开源）
+- 使用apifox进行接口开发管理
+
+![image-20240714213719576](../../../AppData/Roaming/Typora/typora-user-images/image-20240714213719576.png)
+
+
+
+### 张隽滔
 
 #### 技术工作
 - 爬虫
@@ -302,10 +347,28 @@ Baichuan2/
 
     用抓包工具Charles，分析打开集市不同页面的数据流。发现传输集市内容数据的json文件以及相关图片，可以通过一般的网络请求获取。只需要使用合法的用户token，改写url和相应的请求参数，即可获取想要的页面信息。
 
+### 苏东鹏（组长）
 
-### sdp
+#### 调研阶段
 
-### ywx
+- 负责项目经理工作，组织小组项目调研、开发。完成需求分析、产品设计，绘制产品原型图
+- 组织前期技术调研、项目分析，制作本项目全阶段解决方案/技术路线
+- 与张共同探索校园集市爬虫框架设计、确立数据中心结构及维护框架
+- 负责数据中心热度算法、情感分析、数据库维护、舆论评级算法等的调研
+
+#### 开发阶段
+
+- 以张的爬虫端为基础，建立云端数据库，完成数据库维护、爬虫追踪、热度算法等数据库的逻辑设计与代码开发
+- 基于百度ERNIE-UIE，完成数据中心的情感分析算法设计与开发
+- 基于MacBert等模型，完成数据中心的相关性算法设计与开发
+- 基于数据中心，完成舆论评级算法的设计与开发
+- 负责大部分后端接口开发
+
+#### 部分技术示例
+
+![image-20240714211601665](../../../AppData/Roaming/Typora/typora-user-images/image-20240714211601665.png)
+
+### 叶文熙
 
 #### 调研阶段
 
@@ -335,7 +398,7 @@ Baichuan2/
   - 清空数据库指定库表脚本clear_db.py
   - 测试部分后端接口功能脚本test.py
 
-### hwy
+### 黄炜尧
 
 #### 背景调研：任务
 
@@ -399,7 +462,7 @@ Flask 是一个轻量级的 Python web 框架，适合快速构建简单而强�
 
 <img src="https://huia-image.oss-cn-guangzhou.aliyuncs.com/image-20240713201827577.png" alt="image-20240713201827577" style="zoom:70%;" />
 
-### yzr
+### 叶梓荣
 
 #### 调研阶段
 
