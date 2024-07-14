@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import time
 from SchoolMarket.utils.database import MysqlOperator
+from SchoolMarket.config.tokens import *
 
 
 # from SchoolMarket.Heat_Algorithm.pop_value_cal import DatabaseConnector
@@ -64,12 +65,10 @@ def get_access_key(API_Key, Secret_Key):
 # 函数二：获取情感分析接口原始的返回数据
 def get_emotion_analysis(text, flag):
     # 定义百度API情感分析的token值和URL值
-    token1 = '24.9b689046a1fb5b02bd0aaf5e61448bfe.2592000.1721546572.282335-72493613'
-    token2 = '24.635aa2ec2cd618e4a63205f31b645428.2592000.1721441617.282335-84794504'
     if flag:
-        token = token1
+        token = bd_token1
     else:
-        token = token2
+        token = bd_token2
     url = 'https://aip.baidubce.com/rpc/2.0/nlp/v1/sentiment_classify?charset=UTF-8&access_token={}'.format(token)
     new_each = {'text': text}  # 将文本数据保存在变量new_each中，data的数据类型为string
     new_each = json.dumps(new_each)

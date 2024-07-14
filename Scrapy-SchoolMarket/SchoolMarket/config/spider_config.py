@@ -2,7 +2,7 @@
 INTERVAL_SECOND = 3600
 
 # 校园集市用户token
-USER_TOKEN = 'bFdWc1paeWFhbkNabFlTRXo0cG1rYTlvdG1tcW80aVpkbjA9'
+USER_TOKEN = '自己的token'
 
 # 请求头
 HEADERS = {

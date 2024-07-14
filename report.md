@@ -36,7 +36,10 @@
 
 #### 运行前准备
 
-- 请根据setting要求配置爬虫cookie、数据库与情感分析云服务token
+- **请在config文件夹中，配置爬虫USER_TOKEN、数据库连接与情感分析云服务token**
+  - 赞噢校园集市的USER_TOKEN获取参考[博客](https://blog.csdn.net/oxacyclopropane/article/details/128348458)
+  - 情感分析云服务token获取参考[百度智能云文档](https://cloud.baidu.com/doc/NLP/s/ek3ipuvem)
+
 
 - 安装百度飞桨paddlepaddle（用于运行ocr）
 
