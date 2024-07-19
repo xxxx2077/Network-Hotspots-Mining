@@ -23,6 +23,31 @@ LOG_STDOUT = True
 
 LOG_ENABLED = True
 
+
+# cookie_pool = [
+#     {"cookie_key1": "cookie_value1"},
+#     {"cookie_key2": "cookie_value2"},
+#     {"cookie_key3": "cookie_value3"},
+#     # 添加更多cookie
+# ]
+
+# def get_random_cookie(cookie_pool):
+#     """从cookie池中随机选择一个cookie"""
+#     return random.choice(cookie_pool)
+
+# def fetch_with_random_cookie(url, cookie_pool):
+#     """使用随机选择的cookie访问URL"""
+#     cookie = get_random_cookie(cookie_pool)
+#     response = requests.get(url, cookies=cookie)
+#     return response
+
+# # 示例使用
+# url = "http://example.com"
+# response = fetch_with_random_cookie(url, cookie_pool)
+
+# print("Status Code:", response.status_code)
+# print("Response Content:", response.content)
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "SchoolMarket (+http://www.yourdomain.com)"
 
