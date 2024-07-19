@@ -7,6 +7,11 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import random
+
+import requests
+
+
 BOT_NAME = "SchoolMarket"
 
 SPIDER_MODULES = ["SchoolMarket.spiders"]
@@ -24,22 +29,22 @@ LOG_STDOUT = True
 LOG_ENABLED = True
 
 
-# cookie_pool = [
-#     {"cookie_key1": "cookie_value1"},
-#     {"cookie_key2": "cookie_value2"},
-#     {"cookie_key3": "cookie_value3"},
-#     # 添加更多cookie
-# ]
+cookie_pool = [
+    {"cookie_key1": "cookie_value1"},
+    {"cookie_key2": "cookie_value2"},
+    {"cookie_key3": "cookie_value3"},
+    # 添加更多cookie
+]
 
-# def get_random_cookie(cookie_pool):
-#     """从cookie池中随机选择一个cookie"""
-#     return random.choice(cookie_pool)
+def get_random_cookie(cookie_pool):
+    """从cookie池中随机选择一个cookie"""
+    return random.choice(cookie_pool)
 
-# def fetch_with_random_cookie(url, cookie_pool):
-#     """使用随机选择的cookie访问URL"""
-#     cookie = get_random_cookie(cookie_pool)
-#     response = requests.get(url, cookies=cookie)
-#     return response
+def fetch_with_random_cookie(url, cookie_pool):
+    """使用随机选择的cookie访问URL"""
+    cookie = get_random_cookie(cookie_pool)
+    response = requests.get(url, cookies=cookie)
+    return response
 
 # # 示例使用
 # url = "http://example.com"
